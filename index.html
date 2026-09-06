@@ -122,7 +122,10 @@
     *{ animation:none !important; transition:none !important; }
   }
   .card-start{ display:grid; grid-template-columns:minmax(0,440px) minmax(0,1fr); align-items:stretch; margin-bottom:8px; }
-  .card-start .thumb-wrap{ border-bottom:0; border-right:1px solid var(--rule-2); height:100%; }
+  .card-start .thumb-wrap{ border-bottom:0; border-right:1px solid var(--rule-2);
+    /* height drives this cell, so the 1200/713 ratio must not also compute a width —
+       left in, it resolved wider than the 440px track and bled over the text. */
+    aspect-ratio:auto; width:100%; min-width:0; height:100%; min-height:236px; }
   .card-start .card-body{ padding:24px 26px; align-self:center; }
   .card-start h3{ font-size:22px; }
   .card-start p{ font-size:14px; }
