@@ -1,0 +1,651 @@
+<!doctype html>
+<html lang="en-IN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Event Compliance Navigator</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&family=Spline+Sans+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    color-scheme: light;
+    --ground:#DCE3DD; --panel:#EEF2EC; --panel-2:#E4EAE3;
+    --ink:#0F1714; --ink-2:#48544E; --ink-3:#78857E;
+    --rule:rgba(15,23,20,0.14); --rule-2:rgba(15,23,20,0.30);
+    --accent:#0A5C53; --accent-2:#0E7568; --accent-wash:rgba(10,92,83,0.10);
+    --crit:#B42E22; --crit-wash:rgba(180,46,34,0.13);
+    --now:#C8382A; --warn:#8F6206; --warn-wash:rgba(143,98,6,0.14);
+    --sans:'Archivo', ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
+    --mono:'Spline Sans Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    --r:2px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
+      --ground:#0C1310; --panel:#131C18; --panel-2:#18221E;
+      --ink:#DCE5DF; --ink-2:#94A39C; --ink-3:#6C7B74;
+      --rule:rgba(220,229,223,0.14); --rule-2:rgba(220,229,223,0.30);
+      --accent:#54C3B2; --accent-2:#74D6C6; --accent-wash:rgba(84,195,178,0.14);
+      --crit:#F0796A; --crit-wash:rgba(240,121,106,0.16);
+      --now:#F0796A; --warn:#DCA340; --warn-wash:rgba(220,163,64,0.16);
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --ground:#0C1310; --panel:#131C18; --panel-2:#18221E;
+    --ink:#DCE5DF; --ink-2:#94A39C; --ink-3:#6C7B74;
+    --rule:rgba(220,229,223,0.14); --rule-2:rgba(220,229,223,0.30);
+    --accent:#54C3B2; --accent-2:#74D6C6; --accent-wash:rgba(84,195,178,0.14);
+    --crit:#F0796A; --crit-wash:rgba(240,121,106,0.16);
+    --now:#F0796A; --warn:#DCA340; --warn-wash:rgba(220,163,64,0.16);
+  }
+  *{ box-sizing:border-box; }
+  body{ background:var(--ground); color:var(--ink); font-family:var(--sans); font-size:16px; line-height:1.55; margin:0; -webkit-font-smoothing:antialiased; }
+  .sheet{ max-width:1180px; margin:0 auto; padding:0 28px 70px; }
+  .mono{ font-family:var(--mono); font-variant-numeric:tabular-nums; }
+  a{ color:inherit; }
+  a:focus-visible, input:focus-visible, select:focus-visible, button:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+  .toolkit-nav{ display:flex; align-items:center; gap:18px; flex-wrap:wrap; padding:16px 28px; max-width:1180px; margin:0 auto;
+    font-family:var(--mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase; border-bottom:1px solid var(--rule); color:var(--ink-3); }
+  .toolkit-nav a{ text-decoration:none; color:var(--ink-3); padding:4px 0; border-bottom:2px solid transparent; transition:color .15s ease; }
+  .toolkit-nav a:hover{ color:var(--ink); }
+  .toolkit-nav a.current{ color:var(--accent); border-bottom-color:var(--accent); }
+  .toolkit-nav .home{ color:var(--ink); font-weight:600; letter-spacing:0.14em; margin-right:auto; }
+
+  .masthead{ display:grid; grid-template-columns:minmax(0,1fr) minmax(180px,auto); gap:28px; align-items:end; padding:40px 0 22px; border-bottom:2px solid var(--ink); }
+  .kicker{ font-family:var(--mono); font-size:11.5px; letter-spacing:0.18em; text-transform:uppercase; color:var(--accent); margin:0 0 14px; }
+  h1{ font-weight:800; font-stretch:120%; font-size:clamp(34px, 5.2vw, 58px); line-height:0.92; letter-spacing:-0.03em; margin:0; text-wrap:balance; }
+  .lede{ margin:16px 0 0; max-width:62ch; color:var(--ink-2); font-size:16.5px; }
+  .asof{ text-align:right; font-family:var(--mono); font-size:12px; line-height:1.7; color:var(--ink-3); white-space:nowrap;
+    border-left:1px solid var(--rule); padding-left:22px; }
+  .asof strong{ display:block; font-size:16px; color:var(--ink); font-weight:500; letter-spacing:-0.01em; }
+
+  .slab{ display:flex; align-items:center; gap:14px; margin:44px 0 14px; }
+  .slab h2{ font-family:var(--mono); font-size:12px; font-weight:500; letter-spacing:0.18em; text-transform:uppercase; color:var(--ink-2); margin:0; white-space:nowrap; }
+  .slab .fill{ flex:1 1 auto; height:1px; background:var(--rule-2); }
+  .slab .aside{ font-family:var(--sans); font-size:12.5px; font-style:italic; color:var(--ink-3); }
+
+  /* ---------- controls ---------- */
+  .controls{ background:var(--panel); border:1px solid var(--rule-2); padding:18px 20px 20px; }
+  .ctl-row{ display:grid; grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr); gap:16px; }
+  .field label{ display:block; font-family:var(--mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-2); margin-bottom:6px; }
+  .field input, .field select{ width:100%; background:var(--panel-2); border:1px solid var(--rule-2); border-radius:var(--r);
+    color:var(--ink); font-family:var(--sans); font-size:14.5px; padding:10px 11px; transition:border-color .15s ease; }
+  .field input:hover, .field select:hover{ border-color:var(--ink-3); }
+  .field input::placeholder{ color:var(--ink-3); }
+
+  .chips{ display:flex; flex-wrap:wrap; gap:7px; margin-top:16px; padding-top:14px; border-top:1px dashed var(--rule-2); }
+  .chip{ font-family:var(--mono); font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase;
+    background:transparent; color:var(--ink-2); border:1px solid var(--rule-2); padding:6px 11px; border-radius:var(--r);
+    cursor:pointer; transition:background .15s ease, color .15s ease, border-color .15s ease; }
+  .chip:hover{ border-color:var(--ink-3); color:var(--ink); }
+  .chip.on{ background:var(--ink); color:var(--ground); border-color:var(--ink); }
+  .chip .n{ opacity:.55; margin-left:5px; }
+
+  .countline{ font-family:var(--mono); font-size:11.5px; color:var(--ink-3); margin:18px 0 10px; letter-spacing:0.04em; }
+
+  /* ---------- event rows ---------- */
+  .ev{ border:1px solid var(--rule-2); background:var(--panel-2); margin-bottom:10px; transition:border-color .15s ease; }
+  .ev:hover{ border-color:var(--ink-3); }
+  .ev.open{ border-color:var(--accent); }
+  .ev-head{ display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,auto); gap:16px; align-items:center;
+    width:100%; text-align:left; background:transparent; border:0; padding:15px 18px; cursor:pointer; color:inherit; font:inherit; }
+  .ev-name{ font-weight:600; font-size:15px; letter-spacing:-0.005em; }
+  .ev-name{ display:block; }
+  .ev-cat{ display:block; font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-3); margin-top:3px; }
+  .ev-form{ font-family:var(--mono); font-size:12px; font-weight:600; color:var(--accent);
+    border:1px solid var(--accent); padding:4px 9px; border-radius:var(--r); white-space:nowrap;
+    max-width:100%; overflow:hidden; text-overflow:ellipsis; }
+  .ev-due{ font-family:var(--mono); font-size:12.5px; text-align:right; white-space:nowrap; color:var(--ink-2); }
+  .ev-due b{ display:block; font-size:13.5px; color:var(--ink); font-weight:500; }
+
+  /* smooth accordion without measuring heights */
+  .ev-body{ display:grid; grid-template-rows:0fr; transition:grid-template-rows .28s cubic-bezier(.3,.7,.2,1); }
+  .ev.open .ev-body{ grid-template-rows:1fr; }
+  .ev-body > .inner{ overflow:hidden; }
+  .ev-detail{ padding:4px 18px 20px; border-top:1px solid var(--rule); margin-top:2px; }
+  .dl{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:18px 26px; margin-top:14px; }
+  .dl h4{ font-family:var(--mono); font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--ink-3); margin:0 0 5px; }
+  .dl p{ margin:0; font-size:13.5px; color:var(--ink-2); line-height:1.6; }
+  .dl .basis{ font-family:var(--mono); font-size:12px; color:var(--accent); }
+  .dl ul{ margin:0; padding-left:16px; font-size:13.5px; color:var(--ink-2); line-height:1.7; }
+  .note{ margin-top:16px; padding:11px 13px; background:var(--accent-wash); border-radius:var(--r); font-size:13.5px; }
+  .note b{ font-family:var(--mono); font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--accent); display:block; margin-bottom:4px; }
+
+  /* ---------- late fee calculator ---------- */
+  .calc{ margin-top:18px; border:1px solid var(--rule-2); background:var(--panel); padding:14px 16px; }
+  .calc-head{ font-family:var(--mono); font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--ink-3); margin-bottom:10px; }
+  .calc-row{ display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap; }
+  .calc-row .field{ flex:0 1 190px; }
+  .calc-out{ flex:1 1 240px; }
+  .calc-verdict{ font-family:var(--mono); font-size:13px; line-height:1.6; }
+  .calc-verdict .band{ display:inline-block; font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase;
+    padding:3px 8px; border-radius:var(--r); margin-bottom:6px; }
+  .band.ontime{ background:var(--accent-wash); color:var(--accent); }
+  .band.late{ background:var(--crit-wash); color:var(--crit); }
+  .band.na{ background:var(--rule); color:var(--ink-2); }
+
+  .empty{ padding:44px 0; text-align:center; color:var(--ink-3); font-size:14.5px; }
+
+  footer{ margin-top:56px; padding-top:20px; border-top:1px solid var(--rule); font-size:12.5px; color:var(--ink-3); line-height:1.7; }
+
+  @media (max-width:760px){
+    .masthead{ grid-template-columns:1fr; align-items:start; gap:18px; }
+    .asof{ text-align:left; white-space:normal; border-left:0; padding-left:0; }
+    .slab{ flex-wrap:wrap; gap:8px 14px; }
+    .slab h2{ white-space:normal; letter-spacing:0.14em; }
+    .slab .fill{ display:none; }
+    .slab .aside{ flex:1 0 100%; }
+    .toolkit-nav{ gap:10px 14px; padding:12px 18px; font-size:10.5px; }
+    .toolkit-nav .home{ flex:1 0 100%; margin-right:0; padding-bottom:8px; border-bottom:1px solid var(--rule); margin-bottom:2px; }
+    .toolkit-nav a{ padding:8px 0; }
+    .sheet{ padding-left:18px; padding-right:18px; }
+    .ctl-row{ grid-template-columns:1fr; gap:14px; }
+    .ev-head{ grid-template-columns:minmax(0,1fr) auto; gap:10px 12px; padding:14px; }
+    .ev-due{ grid-column:1 / -1; text-align:left; white-space:normal; }
+    .ev-due b{ display:inline; margin-right:8px; }
+    .calc-row .field{ flex:1 1 100%; }
+    .calc-out{ flex:1 1 100%; }
+    .dl{ grid-template-columns:1fr; gap:14px; }
+    .ev-detail{ padding:4px 14px 18px; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation:none !important; transition:none !important; }
+  }
+
+  /* --- masthead: the gap between lede and date block is a measured column --- */
+  .asof-lbl{ display:block; font-size:10.5px; letter-spacing:0.14em; text-transform:uppercase; color:var(--ink-3); margin-bottom:2px; }
+  /* --- native date inputs render in the browser's locale; echo the date back --- */
+  .date-echo{ display:block; font-family:var(--mono); font-size:10.5px; color:var(--ink-3); margin-top:4px; letter-spacing:0.04em; }
+  .date-echo:empty{ display:none; }
+  /* --- footers are boilerplate; label them so the eye can classify and skip --- */
+  .disc-lbl{ display:block; font-family:var(--mono); font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color:var(--ink-3); margin-bottom:8px; }
+</style>
+
+<nav class="toolkit-nav">
+  <a class="home" href="../">CORPORATE GOVERNANCE TOOLKIT</a>
+  <a href="../company-classification/">Classification</a>
+  <a href="../compliance-radar/">Compliance Radar</a>
+  <a class="current" href="../event-compliance/">Event Navigator</a>
+  <a href="../board-resolution-generator/">Board Resolutions</a>
+  <a href="../ss-checker/">SS-1 / SS-2 Checker</a>
+  <a href="../contract-risk-flagger/">Contract Risk Flagger</a>
+  <a href="../sebi-compliance-checker/">SEBI Checker</a>
+</nav>
+
+<div class="sheet">
+  <div class="masthead">
+    <div>
+      <p class="kicker">Event compliance navigator</p>
+      <h1>Something happened. What do you file?</h1>
+      <p class="lede">Calendar compliance is the easy half. The other half is event-driven — a director resigns, a charge is created, shares are allotted — and each one starts a clock. Pick the event, get the form, the deadline computed from your own date, the provision, and what it costs if you are late.</p>
+    </div>
+    <div class="asof mono">
+      <span class="asof-lbl">Reading as on</span>
+      <strong id="todayLabel">—</strong>
+      <span id="eventCount">—</span> events tracked<br>
+      Companies Act, 2013 · FEMA
+    </div>
+  </div>
+
+  <div class="slab"><h2>Find the event</h2><i class="fill"></i><span class="aside">Deadlines compute from the date you set</span></div>
+
+  <div class="controls">
+    <div class="ctl-row">
+      <div class="field">
+        <label for="q">Search — event, form, or section</label>
+        <input type="text" id="q" placeholder="e.g. charge, resign, PAS-3, allotment…" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="evDate">Date the event happened</label>
+        <input type="date" id="evDate">
+      </div>
+      <div class="field">
+        <label for="coType">Company category</label>
+        <select id="coType">
+          <option value="other">Other company</option>
+          <option value="small">Small company / OPC</option>
+        </select>
+      </div>
+    </div>
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <p class="countline" id="countline"></p>
+  <div id="list"></div>
+
+  <footer>
+    <span class="disc-lbl">Disclaimer</span>
+    Reference tool built for portfolio purposes on the Companies Act, 2013 and rules made under it, and on FEMA/RBI reporting requirements. Filing windows, additional-fee slabs and the charge-registration regime were checked against the bare provisions and the Companies (Registration Offices and Fees) Rules, 2014 — in particular Section 42(8) for the fifteen-day return of allotment, Section 77 for the thirty / sixty / further sixty day charge windows, and the current additional-fee slabs. Fee figures are the Registrar's additional fee and do not include the normal filing fee, which varies with authorised capital, nor GST or professional charges. Several of these timelines have been amended in recent years and study material can lag — confirm against the current provision and a practising Company Secretary before relying on this for an actual filing.
+  <br><span style="display:inline-block;margin-top:8px;font-family:var(--mono);font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;">Content verified as at September 2026 · statutory figures are amended from time to time — re-check before relying on them</span>
+  </footer>
+</div>
+
+<script>
+/* ---------------- data ---------------- */
+// feeType: 'general' — Registrar's additional fee slabs under the Companies
+//          (Registration Offices and Fees) Rules, 2014
+//          'annual'  — Rs 100 per day, no cap (Sec 92 / 137 filings)
+//          'charge'  — the separate post-2018 charge regime
+//          'none'    — not a fee-bearing filing with the Registrar
+const EVENTS = [
+  // ---- Directors & KMP ----
+  { ev:'A director is appointed', cat:'Directors & KMP', form:'DIR-12', days:30, clock:'from the date of appointment', basis:'Sec. 152 / 161 · Rule 8, Appointment & Qualification of Directors Rules', feeType:'general',
+    pen:'Additional fee on the slab below. Continuing default attracts penalty on the company and every officer in default under Sec. 172.',
+    att:['Board resolution or members\' resolution','Consent to act as director in Form DIR-2','Declaration of non-disqualification in DIR-8','Interest disclosure in MBP-1'],
+    note:'An additional director appointed under Sec. 161(1) holds office only up to the next AGM — diary the regularisation, it is the most commonly missed follow-through.' },
+  { ev:'A director resigns', cat:'Directors & KMP', form:'DIR-12', days:30, clock:'from the date the resignation takes effect', basis:'Sec. 168 · Rule 15', feeType:'general',
+    pen:'Additional fee on the slab below, plus officer-in-default exposure for continuing non-filing.',
+    att:['Resignation letter from the director','Board resolution noting the resignation','Proof of despatch, where relevant'],
+    note:'The resignation takes effect from the date the company receives the notice, or a later date stated in it — not the date the Board notes it.' },
+  { ev:'A director files his own notice of resignation', cat:'Directors & KMP', form:'DIR-11', days:30, clock:'from the date of resignation', basis:'Sec. 168(1), proviso', feeType:'general',
+    pen:'Filed by the director personally; the additional fee falls on the director, not the company.',
+    att:['Copy of the resignation letter','Proof of despatch to the company','Reasons for resignation'],
+    note:'Optional for the director but strongly advisable — it is the director\'s own evidence of the date, if the company later fails to file DIR-12.' },
+  { ev:'A director is removed, or vacates office', cat:'Directors & KMP', form:'DIR-12', days:30, clock:'from the date of removal or vacation', basis:'Sec. 167 / 169', feeType:'general',
+    pen:'Additional fee on the slab below.',
+    att:['Special notice and members\' resolution, where removal under Sec. 169','Board resolution','Evidence of the disqualification, where office is vacated'],
+    note:'Removal under Sec. 169 needs special notice and an opportunity to be heard — skipping that makes the removal itself challengeable.' },
+  { ev:'A Managing Director, Whole-time Director or Manager is appointed', cat:'Directors & KMP', form:'MR-1', days:60, clock:'from the date of appointment', basis:'Sec. 196 · Rule 3, Appointment & Remuneration of Managerial Personnel Rules', feeType:'general',
+    pen:'Additional fee on the slab below.',
+    att:['Board and, where required, members\' resolution','Terms of appointment and remuneration','Schedule V compliance statement, if applicable'],
+    note:'File DIR-12 as well if the appointment also changes the person\'s directorship or designation — MR-1 alone does not update the register.' },
+  { ev:'A Company Secretary or CFO is appointed as KMP', cat:'Directors & KMP', form:'DIR-12', days:30, clock:'from the date of appointment', basis:'Sec. 203 · Rule 8, Managerial Personnel Rules', feeType:'general',
+    pen:'Additional fee on the slab below. Sec. 203(5) carries a specific penalty for failure to appoint a required KMP.',
+    att:['Board resolution','Letter of appointment','Membership number, for a Company Secretary'],
+    note:'The requirement to appoint a whole-time CS turns on paid-up capital thresholds — check whether the company has crossed one before treating this as optional.' },
+  { ev:'Periodic KYC of a director', cat:'Directors & KMP', form:'DIR-3 KYC Web', days:null, clock:'a fixed calendar date, not event-driven', special:'By 30 June, once every third consecutive financial year — the annual requirement was abolished with effect from 31 March 2026. The cycle anchors to the financial year in which the DIN was allotted', basis:'Rule 12A, as substituted by the Appointment & Qualification of Directors Amendment Rules, 2025 (G.S.R. 943(E))', feeType:'general',
+    pen:'The DIN is deactivated for non-filing and a fee of ₹5,000 is payable to reactivate it.',
+    att:['Proof of identity and address','Personal mobile and email, verified by OTP','Digital signature of the director'],
+    note:'This stopped being an annual 30 September item in 2026 — a lot of compliance calendars and study material still show the old rule. There is also a separate 30-day filing whenever a director\'s mobile, email or residential address changes.' },
+  { ev:'A director discloses his interest for the year', cat:'Directors & KMP', form:'MBP-1', days:null, clock:'at the first Board meeting of the financial year, and on any change', special:'Not filed with the Registrar; kept in the register of contracts (MBP-4)', basis:'Sec. 184(1) · Rule 9', feeType:'none',
+    pen:'No filing fee. Failure to disclose attracts penalty on the director under Sec. 184(4) and can render the contract voidable.',
+    att:['Form MBP-1 signed by each director','Entry in the register of contracts under Sec. 189'],
+    note:'This is not a ROC filing, which is exactly why it gets forgotten — but it is the foundation of every related-party approval you do later that year.' },
+  { ev:'A director declares he is not disqualified', cat:'Directors & KMP', form:'DIR-8', days:null, clock:'at the first Board meeting of the financial year, and on appointment', special:'Not filed with the Registrar; retained by the company', basis:'Sec. 164(2) · Rule 14', feeType:'none',
+    pen:'No filing fee. A director who continues while disqualified attracts personal liability.',
+    att:['Form DIR-8 signed by each director'],
+    note:'Collect it before the meeting, not after — the Board relies on it when it approves the annual accounts.' },
+
+  // ---- Shares & Capital ----
+  { ev:'Shares are allotted by private placement', cat:'Shares & Capital', form:'PAS-3', days:15, clock:'from the date of allotment', basis:'Sec. 42(8) · Rule 12', feeType:'general',
+    pen:'Sec. 42(9): the company, its promoters and directors are liable to a penalty of ₹1,000 for each day of default, up to ₹25,00,000. Contravention of the money-lock in Sec. 42 carries separate exposure under Sec. 42(10).',
+    att:['Special resolution approving the private placement','Board resolution approving the allotment','Complete list of allottees','Valuation report from a registered valuer'],
+    note:'Fifteen days applies to private placement specifically. Until PAS-3 is filed the company cannot utilise the money raised — the funds stay locked in the separate bank account.' },
+  { ev:'Shares are allotted by any other mode — rights, bonus, preferential, ESOP exercise, conversion', cat:'Shares & Capital', form:'PAS-3', days:30, clock:'from the date of allotment', basis:'Sec. 39(4) · Rule 12', feeType:'general',
+    pen:'Sec. 39(5): penalty of ₹1,000 for each day of default on the company and every officer in default, up to ₹1,00,000.',
+    att:['Board resolution approving the allotment','Complete list of allottees','Members\' resolution, where required for the mode of issue','Valuation report, where applicable'],
+    note:'Thirty days here, not fifteen — the fifteen-day rule is specific to private placement under Sec. 42(8). The penalty caps differ sharply too: ₹1,00,000 under Sec. 39(5) against ₹25,00,000 under Sec. 42(9).' },
+  { ev:'Authorised share capital is increased', cat:'Shares & Capital', form:'SH-7', days:30, clock:'from the date of the ordinary resolution', basis:'Sec. 61 · Sec. 64', feeType:'general',
+    pen:'Additional fee on the slab below, plus stamp duty and the fee differential on the increased capital.',
+    att:['Ordinary resolution and explanatory statement','Altered Memorandum of Association','Notice of the general meeting'],
+    note:'Check the Articles first — if they do not authorise an increase, the Articles must be altered by special resolution before the capital clause can move.' },
+  { ev:'The capital clause is altered — consolidation, sub-division, conversion', cat:'Shares & Capital', form:'SH-7', days:30, clock:'from the date of the resolution', basis:'Sec. 61 · Sec. 64', feeType:'general',
+    pen:'Additional fee on the slab below.',
+    att:['Ordinary resolution','Altered Memorandum','Board resolution'],
+    note:'Sub-division cannot change the proportion between paid-up and unpaid amounts on the shares — a common drafting trap.' },
+  { ev:'The company ceases to be a small company — securities must be dematerialised', cat:'Shares & Capital', form:'Rule 9B compliance, then PAS-6', days:null, clock:'a rolling trigger, not a fixed date', special:'Comply within 18 months of the close of the financial year in which the company ceased to be a small company. Small-company status is tested as at the last day of the financial year, on audited figures. Government companies are outside this; producer companies get a longer runway', basis:'Rule 9B, Companies (Prospectus and Allotment of Securities) Rules, 2014', feeType:'none',
+    pen:'The company cannot issue or allot any securities, and members cannot transfer them, until the holdings are dematerialised — it freezes corporate action rather than levying a fee.',
+    att:['ISIN obtained from a depository','Agreement with the depository and an RTA','Reconciliation of share capital audit report in PAS-6','Board resolution'],
+    note:'Two traps. First, this is a rolling 18-month trigger — the widely quoted fixed dates of 30 September 2024 and 30 June 2025 have both passed and are not the current test. Second, the small-company threshold rose to ₹10 crore paid-up capital and ₹100 crore turnover on 1 December 2025, so a number of companies that were caught by Rule 9B have dropped back out of it.' },
+  { ev:'Half-yearly reconciliation of share capital after dematerialisation', cat:'Shares & Capital', form:'PAS-6', days:60, clock:'from the end of each half-year (31 March and 30 September)', basis:'Rule 9A(8) / Rule 9B', feeType:'general',
+    pen:'Additional fee on the slab below; continued default is pursued as a breach of the dematerialisation rules.',
+    att:['Reconciliation certified by a practising Company Secretary or Chartered Accountant','ISIN-wise details of capital held in demat and physical form'],
+    note:'Due 30 May and 29 November in practice. It is certified, not self-declared — build in time for the professional to review before the deadline.' },
+  { ev:'Shares are transferred between shareholders', cat:'Shares & Capital', form:'SH-4', days:60, clock:'from the date the instrument is executed — delivered to the company, not filed with the Registrar', basis:'Sec. 56 · Rule 11', feeType:'none',
+    pen:'No Registrar fee. Sec. 56(6) carries a penalty on the company and officers in default for failing to register a valid transfer.',
+    att:['Duly stamped and executed SH-4','Original share certificate','Board resolution registering the transfer'],
+    note:'Stamp duty on SH-4 is payable by the transferor and an unstamped instrument is not registrable — check the pre-emption rights in the Articles before the Board approves.' },
+  { ev:'Sweat equity shares or ESOPs are issued', cat:'Shares & Capital', form:'PAS-3 + MGT-14', days:15, clock:'PAS-3 within 15 days of allotment; MGT-14 within 30 days of the special resolution', basis:'Sec. 54 · Sec. 62(1)(b) · Rule 8 / Rule 12', feeType:'general',
+    pen:'Sec. 42(9) penalty applies to the return of allotment as above.',
+    att:['Special resolution and explanatory statement','Valuation report from a registered valuer','Scheme document','List of allottees'],
+    note:'A private company can issue ESOPs by ordinary resolution under a rule exemption — but sweat equity still needs a special resolution, and the two get conflated.' },
+  { ev:'The company buys back its own shares', cat:'Shares & Capital', form:'SH-8, SH-9, SH-11', days:30, clock:'SH-11 return within 30 days of completion; SH-8 and SH-9 before the buy-back opens', basis:'Sec. 68 · Rule 17', feeType:'general',
+    pen:'Additional fee on the slab below; Sec. 68(11) carries fine on the company and imprisonment or fine for officers in default.',
+    att:['Letter of offer in SH-8','Declaration of solvency in SH-9, verified by affidavit','Board and, where required, special resolution','Certificate of compliance in SH-15'],
+    note:'The declaration of solvency must be signed by at least two directors, one of whom is the Managing Director where there is one — an affidavit short of that invalidates the process.' },
+  { ev:'Share capital is reduced', cat:'Shares & Capital', form:'RSC-1', days:null, clock:'application to the NCLT; no fixed day-count from the resolution', special:'Tribunal-driven timeline; the confirmed order is then filed with the Registrar in INC-28', basis:'Sec. 66 · NCLT (Procedure for Reduction of Share Capital) Rules, 2016', feeType:'none',
+    pen:'Court-supervised process. Concealment of a creditor attracts consequences under Sec. 66(10) and (11).',
+    att:['Special resolution','List of creditors certified by a director','Auditor\'s certificate','Minutes of the Tribunal order'],
+    note:'This is not a Registrar filing at the outset — it is a Tribunal petition, and the reduction takes effect only on registration of the Tribunal\'s order.' },
+
+  // ---- Charges ----
+  { ev:'A charge is created over the company\'s property', cat:'Charges', form:'CHG-1 / CHG-9', days:30, clock:'from the date of creation of the charge', basis:'Sec. 77 · Rule 3, Registration of Charges Rules', feeType:'charge',
+    pen:'Beyond 30 days the Registrar may allow a further 60 days on additional fee; beyond that, a further 60 days on ad valorem fee — an outer limit of 120 days. Miss that and the charge cannot be registered at all.',
+    att:['Certified copy of the instrument creating the charge','Board resolution','Particulars of the charge holder','Sanction letter, where a bank facility'],
+    note:'An unregistered charge is not taken into account by a liquidator or creditor in insolvency — the security effectively evaporates. This is the single most expensive deadline on this page to miss.' },
+  { ev:'An existing charge is modified', cat:'Charges', form:'CHG-1', days:30, clock:'from the date of modification', basis:'Sec. 79 · Rule 3', feeType:'charge',
+    pen:'Same escalating regime as creation — 30 days, then 60 on additional fee, then a further 60 on ad valorem fee.',
+    att:['Instrument of modification','Board resolution','Revised particulars of the charge'],
+    note:'A change in the terms, extent or operation of the security is a modification — an enhancement of a working-capital limit usually is, even where the underlying document is unchanged.' },
+  { ev:'A charge is satisfied or repaid in full', cat:'Charges', form:'CHG-4', days:30, clock:'from the date of full payment or satisfaction', basis:'Sec. 82 · Rule 8', feeType:'general',
+    pen:'The Registrar may allow filing within 300 days of satisfaction on application in CHG-8, with additional fee.',
+    att:['No-dues / no-objection letter from the charge holder','Board resolution','Evidence of repayment'],
+    note:'Companies chase the bank\'s NOC and let the 30 days lapse. Start the CHG-4 the day the loan closes — an open charge on the index blocks the next lender.' },
+  { ev:'Property is acquired that is already subject to a charge', cat:'Charges', form:'CHG-1', days:30, clock:'from the date of acquisition', basis:'Sec. 79(b)', feeType:'charge',
+    pen:'Same escalating regime as a newly created charge.',
+    att:['Instrument of acquisition','Existing charge documents','Board resolution'],
+    note:'Easy to miss in an asset purchase — the obligation attaches to the acquiring company even though it did not create the charge.' },
+
+  // ---- Auditors ----
+  { ev:'The first auditor is appointed after incorporation', cat:'Auditors', form:'ADT-1', days:30, clock:'from the date of incorporation — the Board must appoint within this period', basis:'Sec. 139(6)', feeType:'general',
+    pen:'If the Board fails within 30 days, the members must appoint within 90 days at an extraordinary general meeting.',
+    att:['Board resolution','Written consent of the auditor','Certificate of eligibility under Sec. 141'],
+    note:'The rule requiring ADT-1 is framed around the Sec. 139(1) appointment at the AGM, so filing for the first auditor is not strictly mandated — most practitioners file anyway, and it is the safer course.' },
+  { ev:'An auditor is appointed or re-appointed at the AGM', cat:'Auditors', form:'ADT-1', days:15, clock:'from the date of the AGM at which the appointment was made', basis:'Sec. 139(1) · Rule 4', feeType:'general',
+    pen:'Additional fee on the slab below.',
+    att:['Members\' resolution','Written consent and eligibility certificate under Sec. 141','Intimation to the auditor'],
+    note:'Fifteen days from the meeting, not thirty — and the obligation to file sits on the company, not the auditor.' },
+  { ev:'A casual vacancy in the office of auditor is filled', cat:'Auditors', form:'ADT-1', days:15, clock:'from the date of the appointment filling the vacancy', basis:'Sec. 139(8)', feeType:'general',
+    pen:'Additional fee on the slab below.',
+    att:['Board resolution','Members\' approval, where the vacancy arose from resignation','Consent and eligibility certificate'],
+    note:'A vacancy caused by resignation must also be approved by the members within three months of the Board\'s recommendation — the Board alone cannot conclude it.' },
+  { ev:'An auditor resigns', cat:'Auditors', form:'ADT-3', days:30, clock:'from the date of resignation — filed by the auditor, not the company', basis:'Sec. 140(2) · Rule 8', feeType:'general',
+    pen:'Sec. 140(3) carries a penalty on the auditor for failure to file.',
+    att:['Resignation letter','Statement of reasons and facts relevant to the resignation'],
+    note:'This one is the auditor\'s obligation and the auditor\'s penalty — but the company still has to fill the casual vacancy that the resignation creates.' },
+  { ev:'An auditor is removed before the term expires', cat:'Auditors', form:'ADT-2', days:30, clock:'application to the Central Government within 30 days of the Board resolution', basis:'Sec. 140(1) · Rule 7', feeType:'general',
+    pen:'Removal without following the procedure is void; the auditor must be given a reasonable opportunity of being heard.',
+    att:['Board resolution proposing removal','Grounds for removal','Special resolution, to be passed within 60 days of Central Government approval'],
+    note:'The sequence matters and is frequently reversed: Board resolution first, then Central Government approval, then the special resolution — not the other way round.' },
+
+  // ---- Company events ----
+  { ev:'The company is incorporated', cat:'Company Events', form:'SPICe+ (INC-32)', days:null, clock:'the incorporation filing itself', special:'Integrated form covering name reservation, incorporation, PAN, TAN, EPFO, ESIC, GST and bank account', basis:'Sec. 7 · Companies (Incorporation) Rules, 2014', feeType:'general',
+    pen:'Furnishing false information at incorporation attracts action under Sec. 7(5) and (6).',
+    att:['Memorandum and Articles of Association','Declaration in INC-9 and consent in DIR-2','Proof of registered office address','Utility bill not older than two months'],
+    note:'Part A reserves the name and Part B does everything else — a reserved name lapses in 20 days, which is where most first-time filings fall over.' },
+  { ev:'The company is ready to commence business', cat:'Company Events', form:'INC-20A', days:180, clock:'from the date of incorporation', basis:'Sec. 10A · Rule 23A', feeType:'general',
+    pen:'₹50,000 on the company and ₹1,000 per day on every officer in default, up to ₹1,00,000. The Registrar may also initiate removal of the name.',
+    att:['Proof that every subscriber has paid the subscription money','Bank statement showing the credit','Registered office verification, where not already filed'],
+    note:'Until this is filed the company cannot commence business or exercise borrowing powers — and a dormant new company quietly running past 180 days is a classic first-year failure.' },
+  { ev:'The registered office moves within the same city, town or village', cat:'Company Events', form:'INC-22', days:30, clock:'from the date of the change', basis:'Sec. 12(4)', feeType:'general',
+    pen:'Additional fee on the slab below; Sec. 12(8) carries ₹1,000 per day of default, up to ₹1,00,000, on the company and officers in default.',
+    att:['Board resolution','Proof of the new address — utility bill not older than two months','No-objection certificate from the owner, or rent agreement'],
+    note:'Within the same local limits the Board alone can shift the office; step outside those limits and you need a special resolution as well.' },
+  { ev:'The registered office moves outside the city but within the same state and Registrar', cat:'Company Events', form:'MGT-14 + INC-22', days:30, clock:'MGT-14 within 30 days of the special resolution; INC-22 within 30 days of the change', basis:'Sec. 12(5) · Sec. 13', feeType:'general',
+    pen:'Additional fee on both forms, plus the Sec. 12(8) per-day default.',
+    att:['Special resolution and explanatory statement','Altered Memorandum','Proof of the new address'],
+    note:'If the move also crosses from one Registrar\'s jurisdiction to another within the state, Regional Director approval in INC-23 is needed first.' },
+  { ev:'The registered office moves from one state to another', cat:'Company Events', form:'INC-23 → INC-22', days:null, clock:'Regional Director approval first; the 30-day INC-22 clock runs from the change', special:'A multi-step approval process, not a single filing', basis:'Sec. 13(4) · Rule 30', feeType:'general',
+    pen:'Additional fee, plus the Sec. 12(8) per-day default once the change is effective.',
+    att:['Special resolution and altered Memorandum','List of creditors and debenture holders','Newspaper advertisement in INC-26','Consent or no-objection from creditors'],
+    note:'Creditors must be given notice and an opportunity to object — the advertisement and individual notices are what the Regional Director actually scrutinises.' },
+  { ev:'The company changes its name', cat:'Company Events', form:'INC-24 + MGT-14', days:30, clock:'MGT-14 within 30 days of the special resolution; INC-24 for Central Government approval', basis:'Sec. 13(2) · Rule 29', feeType:'general',
+    pen:'Additional fee on the slab below.',
+    att:['Special resolution and explanatory statement','Altered Memorandum and Articles','Name approval letter'],
+    note:'The change takes effect only on the fresh certificate of incorporation — until then every contract, invoice and board minute stays in the old name.' },
+  { ev:'The objects clause is altered', cat:'Company Events', form:'MGT-14', days:30, clock:'from the date of the special resolution', basis:'Sec. 13 · Sec. 117(3)(a)', feeType:'general',
+    pen:'Additional fee on the slab below.',
+    att:['Special resolution and explanatory statement','Altered Memorandum','Notice of the general meeting'],
+    note:'If the company has unutilised money raised from the public, altering the objects additionally requires a postal-ballot special resolution and an exit offer to dissenting shareholders.' },
+  { ev:'A private company converts to public, or public to private', cat:'Company Events', form:'INC-27', days:null, clock:'filed after the approval; conversion to private needs Tribunal approval', special:'Public-to-private conversion is Tribunal-approved and not a simple day-count', basis:'Sec. 14 · Rule 33', feeType:'general',
+    pen:'Additional fee on the slab below.',
+    att:['Special resolution and altered Articles','Minutes of the general meeting','Tribunal order, for conversion to private','List of creditors, where required'],
+    note:'Conversion changes the compliance burden immediately — board composition, quorum and audit obligations all shift the moment the altered Articles take effect.' },
+  { ev:'Books of account are kept somewhere other than the registered office', cat:'Company Events', form:'AOC-5', days:7, clock:'from the date of the Board resolution', basis:'Sec. 128(1), proviso', feeType:'general',
+    pen:'Additional fee on the slab below; Sec. 128(6) carries penalty on the persons responsible.',
+    att:['Board resolution specifying the full address','Details of the place where books will be kept'],
+    note:'Seven days, which is the shortest window on this page — and it is triggered by the resolution, not by the physical move.' },
+
+  // ---- Resolutions & Records ----
+  { ev:'A special resolution, or a Board resolution specified in Sec. 179(3), is passed', cat:'Resolutions & Records', form:'MGT-14', days:30, clock:'from the date of passing the resolution', basis:'Sec. 117 · Rule 24', feeType:'general',
+    pen:'Sec. 117(2): penalty of ₹10,000 on the company and every officer in default, with a continuing daily penalty, subject to the prescribed maximum.',
+    att:['Certified true copy of the resolution','Explanatory statement, for a special resolution','Altered document, where the resolution alters one'],
+    note:'Private companies are exempt from filing the Sec. 179(3) Board resolutions, but not from filing special resolutions — the exemption is routinely over-read.' },
+  { ev:'The AGM is held and the financial statements are adopted', cat:'Resolutions & Records', form:'AOC-4', days:30, clock:'from the date of the AGM', basis:'Sec. 137 · Rule 12', feeType:'annual',
+    pen:'₹100 per day of delay, with no upper limit on the additional fee. Sec. 137(3) adds penalty on the company and officers in default.',
+    att:['Audited financial statements','Board\'s report with annexures','Auditor\'s report','AOC-2 for related-party contracts, where applicable'],
+    note:'Where the AGM is not held at all, the clock runs from the date the AGM should have been held — not filing does not stop the meter.' },
+  { ev:'The annual return falls due after the AGM', cat:'Resolutions & Records', form:'MGT-7 / MGT-7A', days:60, clock:'from the date of the AGM', basis:'Sec. 92 · Rule 11', feeType:'annual',
+    pen:'₹100 per day of delay, with no upper limit on the additional fee. Sec. 92(5) adds penalty on the company and officers in default.',
+    att:['List of shareholders and transfers during the year','Details of directors and KMP with changes','Details of meetings held','MGT-8 certification, where thresholds are crossed'],
+    note:'A small company or OPC files MGT-7A, the abridged return — and picking the wrong one is a filing rejection, not a technicality.' },
+  { ev:'Minutes of a meeting need to be recorded', cat:'Resolutions & Records', form:'Minutes book', days:30, clock:'from the conclusion of the meeting, to enter in the minutes book', basis:'Sec. 118 · SS-1 and SS-2', feeType:'none',
+    pen:'Sec. 118(11): penalty on the company and every officer in default. Tampering with minutes attracts a separate penalty under Sec. 118(12).',
+    att:['Signed minutes book with consecutively numbered pages','Attendance register','Draft minutes circulated within 15 days, for Board meetings'],
+    note:'Minutes are evidence. Entered late, unsigned or on loose sheets, they lose most of their evidentiary value exactly when you need them.' },
+
+  // ---- Deposits & Disclosures ----
+  { ev:'The company has outstanding money that is not treated as a deposit', cat:'Deposits & Disclosures', form:'DPT-3', days:null, clock:'a fixed calendar date, not event-driven', special:'Due by 30 June each year, for the position as at 31 March', basis:'Rule 16, Companies (Acceptance of Deposits) Rules, 2014', feeType:'general',
+    pen:'Additional fee on the slab below; contravention of the deposit rules attracts penalty under Sec. 76A, which is severe.',
+    att:['Auditor\'s certificate','Details of liquid assets, where applicable','Particulars of the outstanding money or loan'],
+    note:'This is required even where the company has taken no public deposits at all — the return covers loans from directors and other exempt receipts, and that is why it is so widely missed.' },
+  { ev:'Payment to an MSME supplier is outstanding beyond 45 days', cat:'Deposits & Disclosures', form:'MSME-1', days:null, clock:'half-yearly, not event-driven', special:'Due by 30 April and 31 October, for the half-years ended 31 March and 30 September', basis:'Sec. 405 · MSME notification', feeType:'general',
+    pen:'₹20,000 initial penalty, plus ₹1,000 per day of continuing default, capped at ₹3,00,000.',
+    att:['Details of the supplier and outstanding amount','Reasons for the delay in payment'],
+    note:'It is a conditional return — no filing is needed if nothing is outstanding beyond 45 days, and there is no nil return. Get the supplier\'s Udyam status on record first.' },
+  { ev:'Someone holds shares in a name other than the beneficial owner', cat:'Deposits & Disclosures', form:'MGT-6', days:30, clock:'from the date the company receives the declaration', basis:'Sec. 89 · Rule 9', feeType:'general',
+    pen:'Additional fee on the slab below; Sec. 89(5) carries penalty on the company and officers in default.',
+    att:['Declaration in MGT-4 by the registered owner','Declaration in MGT-5 by the beneficial owner','Board resolution noting the declarations'],
+    note:'The 30 days runs from receipt of the declaration by the company, not from the date the beneficial interest arose.' },
+  { ev:'A significant beneficial owner is identified', cat:'Deposits & Disclosures', form:'BEN-2', days:30, clock:'from the date the company receives the BEN-1 declaration', basis:'Sec. 90 · Rule 4, Significant Beneficial Owners Rules', feeType:'general',
+    pen:'Additional fee on the slab below. Sec. 90(10) and (11) carry penalties on the individual and the company, and the shares can be made subject to restrictions by the Tribunal.',
+    att:['Declaration in BEN-1','Board resolution','Entry in the register of significant beneficial owners in BEN-3'],
+    note:'The company has a positive duty under Sec. 90(5) to issue notice in BEN-4 to anyone it believes is an SBO — waiting passively for a BEN-1 is itself a default.' },
+
+  // ---- FEMA & RBI ----
+  { ev:'Shares are issued to a person resident outside India', cat:'FEMA & RBI', form:'FC-GPR', days:30, clock:'from the date of allotment', basis:'FEMA (Non-debt Instruments) Rules, 2019 · RBI Master Direction on Reporting', feeType:'none',
+    pen:'Late Submission Fee levied by the RBI, computed on the amount involved and the period of delay.',
+    att:['FIRC and KYC report from the authorised dealer bank','Valuation certificate from a chartered accountant or merchant banker','Board resolution and list of allottees','Company Secretary\'s certificate'],
+    note:'This runs in parallel with PAS-3 and on a different clock — 30 days for FC-GPR against 15 for PAS-3, and the FIRMS entity master must be registered before you can file at all.' },
+  { ev:'Shares are transferred between a resident and a non-resident', cat:'FEMA & RBI', form:'FC-TRS', days:60, clock:'from the date of transfer or receipt of consideration, whichever is earlier', basis:'FEMA (Non-debt Instruments) Rules, 2019 · RBI Master Direction on Reporting', feeType:'none',
+    pen:'Late Submission Fee levied by the RBI, computed on the amount involved and the period of delay.',
+    att:['Transfer instrument in SH-4','Valuation certificate, where pricing guidelines apply','FIRC and KYC report','Consent letters from transferor and transferee'],
+    note:'Pricing guidelines bite in both directions — a transfer to a non-resident cannot be below fair value, and a transfer from one cannot be above it.' },
+  { ev:'The company holds foreign assets or liabilities at year end', cat:'FEMA & RBI', form:'FLA return', days:null, clock:'a fixed calendar date, not event-driven', special:'Due by 15 July each year, for the position as at 31 March', basis:'FEMA · RBI Master Direction on Reporting', feeType:'none',
+    pen:'Treated as a contravention of FEMA, compoundable with the RBI.',
+    att:['Audited or provisional financial statements','Details of foreign direct investment inbound and outbound'],
+    note:'Sits entirely outside the Companies Act, which is precisely why companies with foreign shareholders miss it — no ROC reminder will ever surface it.' },
+  { ev:'The company invests in a foreign entity', cat:'FEMA & RBI', form:'Form FC / APR', days:null, clock:'Form FC at the time of investment; the Annual Performance Report by 31 December each year', special:'Reporting continues annually for as long as the overseas investment is held', basis:'FEMA (Overseas Investment) Rules and Regulations, 2022', feeType:'none',
+    pen:'Late Submission Fee levied by the RBI; continued default can bar further overseas remittances.',
+    att:['Valuation of the foreign entity','Board resolution approving the investment','Audited accounts of the overseas entity, for the APR'],
+    note:'The obligation does not end with the investment — the annual APR keeps running until the stake is fully divested and reported.' }
+];
+
+/* ---------------- helpers ---------------- */
+const CATS = ['Directors & KMP','Shares & Capital','Charges','Auditors','Company Events','Resolutions & Records','Deposits & Disclosures','FEMA & RBI'];
+
+function fmt(d){
+  if(!(d instanceof Date) || isNaN(d)) return '—';
+  return d.toLocaleDateString('en-IN',{ day:'2-digit', month:'short', year:'numeric' });
+}
+function addDays(iso, n){
+  const d = new Date(iso+'T00:00:00');
+  if(isNaN(d)) return null;
+  d.setDate(d.getDate()+n);
+  return d;
+}
+function daysBetween(a, b){ return Math.round((b-a)/86400000); }
+
+const today = new Date(); today.setHours(0,0,0,0);
+document.getElementById('todayLabel').textContent = fmt(today);
+document.getElementById('eventCount').textContent = EVENTS.length;
+document.getElementById('evDate').value = today.toISOString().slice(0,10);
+
+// Additional fee under the Companies (Registration Offices and Fees) Rules, 2014.
+// These multiply the NORMAL filing fee — they are not standalone rupee amounts.
+function generalSlab(daysLate){
+  if(daysLate <= 0)  return null;
+  if(daysLate <= 15) return '1× the normal filing fee';
+  if(daysLate <= 30) return '2× the normal filing fee';
+  if(daysLate <= 60) return '4× the normal filing fee';
+  if(daysLate <= 90) return '6× the normal filing fee';
+  if(daysLate <= 180) return '10× the normal filing fee';
+  return '12× the normal filing fee';
+}
+function chargeFee(daysLate, small){
+  if(daysLate <= 0) return null;
+  if(daysLate <= 30) return small ? '3× the normal filing fee' : '6× the normal filing fee';
+  // the ad valorem slab runs beyond 30 and up to 90 days past the window — it is not open-ended
+  if(daysLate <= 90){
+    return small
+      ? '3× the normal fee, plus ad valorem of 0.025% of the secured amount, capped at ₹1,00,000 (this slab runs to 90 days, not indefinitely)'
+      : '6× the normal fee, plus ad valorem of 0.05% of the secured amount, capped at ₹5,00,000 (this slab runs to 90 days, not indefinitely)';
+  }
+  return 'Past the 120-day outer limit from creation the charge cannot be registered at all — the only route left is condonation by the Central Government, and until then the security ranks behind registered charges';
+}
+
+function feeVerdict(item, dueDate, filingISO, small){
+  if(!filingISO || !dueDate) return null;
+  const filing = new Date(filingISO+'T00:00:00');
+  if(isNaN(filing)) return null;
+  const late = daysBetween(dueDate, filing);
+  if(item.feeType === 'none'){
+    return { band:'na', cls:'na', text:'No Registrar filing fee arises for this item — the consequence is the penalty described above, not an additional fee.' };
+  }
+  if(late <= 0){
+    return { band:'on time', cls:'ontime', text:`Filed ${Math.abs(late)} day${Math.abs(late)===1?'':'s'} before the deadline. Normal filing fee only, no additional fee.` };
+  }
+  let text;
+  if(item.feeType === 'annual'){
+    text = `${late} day${late===1?'':'s'} late — ₹${(late*100).toLocaleString('en-IN')} in additional fee, at ₹100 per day with no upper limit.`;
+  } else if(item.feeType === 'charge'){
+    text = `${late} day${late===1?'':'s'} past the 30-day window — ${chargeFee(late, small)}.`;
+  } else {
+    text = `${late} day${late===1?'':'s'} late — additional fee of ${generalSlab(late)}.`;
+    if(item.form.indexOf('INC-22') !== -1 || item.form.indexOf('PAS-3') !== -1){
+      text += ` Note: where INC-22 or PAS-3 has already been filed late twice or more within the preceding 365 days, a higher additional fee of 1.5× applies — it <em>replaces</em> this figure rather than being added to it.`;
+    }
+  }
+  return { band:`${late} day${late===1?'':'s'} late`, cls:'late', text };
+}
+
+/* ---------------- state & render ---------------- */
+let activeCat = null;
+let openId = null;
+
+function buildChips(){
+  const wrap = document.getElementById('chips');
+  const counts = {};
+  CATS.forEach(c => counts[c] = EVENTS.filter(e=>e.cat===c).length);
+  wrap.innerHTML = `<button class="chip${activeCat===null?' on':''}" data-cat="">All<span class="n">${EVENTS.length}</span></button>` +
+    CATS.map(c=>`<button class="chip${activeCat===c?' on':''}" data-cat="${c}">${c}<span class="n">${counts[c]}</span></button>`).join('');
+  wrap.querySelectorAll('.chip').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      activeCat = b.dataset.cat || null;
+      buildChips(); render();
+    });
+  });
+}
+
+function matches(e, q){
+  if(!q) return true;
+  const hay = (e.ev+' '+e.cat+' '+e.form+' '+e.basis+' '+(e.note||'')).toLowerCase();
+  return q.toLowerCase().split(/\s+/).filter(Boolean).every(t => hay.includes(t));
+}
+
+function render(){
+  const q = document.getElementById('q').value.trim();
+  const evISO = document.getElementById('evDate').value;
+  const small = document.getElementById('coType').value === 'small';
+  const list = document.getElementById('list');
+
+  const rows = EVENTS.filter(e => (!activeCat || e.cat===activeCat) && matches(e, q));
+  document.getElementById('countline').textContent =
+    `${rows.length} of ${EVENTS.length} events${activeCat?` · ${activeCat}`:''}${q?` · matching “${q}”`:''}`;
+
+  if(!rows.length){
+    list.innerHTML = `<div class="empty">Nothing matches that. Try a form number (PAS-3, CHG-1), a section, or a plain word like “resign”, “charge”, “allot”.</div>`;
+    return;
+  }
+
+  list.innerHTML = rows.map(e=>{
+    const id = e.form.replace(/[^A-Za-z0-9]/g,'') + '-' + e.ev.slice(0,12).replace(/[^A-Za-z0-9]/g,'');
+    const due = (e.days !== null && evISO) ? addDays(evISO, e.days) : null;
+    const dueTxt = due ? `<b>${fmt(due)}</b>${e.days} day window`
+                       : `<b>See note</b>not a day-count`;
+    const isOpen = openId === id;
+    return `
+    <div class="ev${isOpen?' open':''}" data-id="${id}">
+      <button class="ev-head" aria-expanded="${isOpen}">
+        <span><span class="ev-name">${e.ev}</span><span class="ev-cat">${e.cat}</span></span>
+        <span class="ev-form">${e.form}</span>
+        <span class="ev-due mono">${dueTxt}</span>
+      </button>
+      <div class="ev-body"><div class="inner"><div class="ev-detail">
+        ${e.special ? `<div class="note"><b>How the deadline works</b>${e.special}</div>` : ''}
+        <div class="dl">
+          <div><h4>Statutory basis</h4><p class="basis">${e.basis}</p></div>
+          <div><h4>If you are late</h4><p>${e.pen}</p></div>
+          <div><h4>What you file with it</h4><ul>${e.att.map(a=>`<li>${a}</li>`).join('')}</ul></div>
+          <div><h4>Clock starts</h4><p>${e.clock.charAt(0).toUpperCase()+e.clock.slice(1)}.</p></div>
+        </div>
+        <div class="note"><b>Worth knowing</b>${e.note}</div>
+        <div class="calc">
+          <div class="calc-head">Late filing estimate</div>
+          <div class="calc-row">
+            <div class="field">
+              <label for="f-${id}">If you actually file on</label>
+              <input type="date" id="f-${id}" class="filing-date" data-id="${id}">
+            </div>
+            <div class="calc-out"><div class="calc-verdict" id="v-${id}">
+              <span class="band na">awaiting a date</span><br>
+              Set a filing date to see the delay and the additional fee band.
+            </div></div>
+          </div>
+        </div>
+      </div></div></div>
+    </div>`;
+  }).join('');
+
+  list.querySelectorAll('.ev-head').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const card = btn.closest('.ev');
+      openId = (openId === card.dataset.id) ? null : card.dataset.id;
+      render();
+    });
+  });
+
+  list.querySelectorAll('.filing-date').forEach(inp=>{
+    inp.addEventListener('change', ()=>{
+      const id = inp.dataset.id;
+      const item = rows.find(e => (e.form.replace(/[^A-Za-z0-9]/g,'') + '-' + e.ev.slice(0,12).replace(/[^A-Za-z0-9]/g,'')) === id);
+      const due = (item.days !== null && evISO) ? addDays(evISO, item.days) : null;
+      const out = document.getElementById('v-'+id);
+      if(!due && item.feeType !== 'none'){
+        out.innerHTML = `<span class="band na">not a day-count</span><br>This deadline is not a simple count of days from the event — read the note above and work it from the governing date.`;
+        return;
+      }
+      const v = feeVerdict(item, due, inp.value, small);
+      if(!v) return;
+      out.innerHTML = `<span class="band ${v.cls}">${v.band}</span><br>${v.text}`;
+    });
+  });
+}
+
+document.getElementById('q').addEventListener('input', ()=>{ openId = null; render(); });
+document.getElementById('evDate').addEventListener('change', render);
+document.getElementById('coType').addEventListener('change', render);
+
+buildChips();
+render();
+</script>
+
+<script>
+/* Native date inputs render in the browser's locale, so an Indian statutory tool
+   can show mm/dd/yyyy. Echo the parsed date back in the form the tool uses. */
+(function(){
+  function fmtIN(v){
+    if(!v) return '';
+    var d = new Date(v + 'T00:00:00');
+    if(isNaN(d)) return '';
+    return d.toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric' });
+  }
+  function attach(inp){
+    if(inp.dataset.dateEcho) return;
+    inp.dataset.dateEcho = '1';
+    var e = document.createElement('span');
+    e.className = 'date-echo';
+    inp.insertAdjacentElement('afterend', e);
+    function upd(){ e.textContent = fmtIN(inp.value); }
+    inp.addEventListener('input', upd);
+    inp.addEventListener('change', upd);
+    upd();
+  }
+  function scan(){ document.querySelectorAll('input[type=date]').forEach(attach); }
+  scan();
+  if(window.MutationObserver){
+    new MutationObserver(scan).observe(document.body, { childList:true, subtree:true });
+  }
+})();
+</script>
+</html>

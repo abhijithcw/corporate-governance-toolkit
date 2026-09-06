@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="en-IN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contract Clause Risk-Flagger</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&family=Spline+Sans+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    color-scheme: light;
+    --ground:#DCE3DD; --panel:#EEF2EC; --panel-2:#E4EAE3;
+    --ink:#0F1714; --ink-2:#48544E; --ink-3:#78857E;
+    --rule:rgba(15,23,20,0.14); --rule-2:rgba(15,23,20,0.30);
+    --accent:#0A5C53; --accent-2:#0E7568; --accent-wash:rgba(10,92,83,0.10);
+    --crit:#B42E22; --crit-wash:rgba(180,46,34,0.13);
+    --now:#C8382A; --warn:#8F6206; --warn-wash:rgba(143,98,6,0.14);
+    --sans:'Archivo', ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
+    --mono:'Spline Sans Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    --r:2px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
+      --ground:#0C1310; --panel:#131C18; --panel-2:#18221E;
+      --ink:#DCE5DF; --ink-2:#94A39C; --ink-3:#6C7B74;
+      --rule:rgba(220,229,223,0.14); --rule-2:rgba(220,229,223,0.30);
+      --accent:#54C3B2; --accent-2:#74D6C6; --accent-wash:rgba(84,195,178,0.14);
+      --crit:#F0796A; --crit-wash:rgba(240,121,106,0.16);
+      --now:#F0796A; --warn:#DCA340; --warn-wash:rgba(220,163,64,0.16);
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --ground:#0C1310; --panel:#131C18; --panel-2:#18221E;
+    --ink:#DCE5DF; --ink-2:#94A39C; --ink-3:#6C7B74;
+    --rule:rgba(220,229,223,0.14); --rule-2:rgba(220,229,223,0.30);
+    --accent:#54C3B2; --accent-2:#74D6C6; --accent-wash:rgba(84,195,178,0.14);
+    --crit:#F0796A; --crit-wash:rgba(240,121,106,0.16);
+    --now:#F0796A; --warn:#DCA340; --warn-wash:rgba(220,163,64,0.16);
+  }
+  *{ box-sizing:border-box; }
+  body{ background:var(--ground); color:var(--ink); font-family:var(--sans); font-size:16px; line-height:1.55; margin:0; -webkit-font-smoothing:antialiased; }
+  .sheet{ max-width:1180px; margin:0 auto; padding:0 28px 70px; }
+  .mono{ font-family:var(--mono); font-variant-numeric:tabular-nums; }
+  a{ color:inherit; }
+  a:focus-visible, textarea:focus-visible, button:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+  .toolkit-nav{ display:flex; align-items:center; gap:18px; flex-wrap:wrap; padding:16px 28px; max-width:1180px; margin:0 auto;
+    font-family:var(--mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase; border-bottom:1px solid var(--rule); color:var(--ink-3); }
+  .toolkit-nav a{ text-decoration:none; color:var(--ink-3); padding:4px 0; border-bottom:2px solid transparent; }
+  .toolkit-nav a:hover{ color:var(--ink); }
+  .toolkit-nav a.current{ color:var(--accent); border-bottom-color:var(--accent); }
+  .toolkit-nav .home{ color:var(--ink); font-weight:600; letter-spacing:0.14em; margin-right:auto; }
+
+  .masthead{ display:grid; grid-template-columns:minmax(0,1fr) minmax(180px,auto); gap:28px; align-items:end; padding:40px 0 22px; border-bottom:2px solid var(--ink); }
+  .kicker{ font-family:var(--mono); font-size:11.5px; letter-spacing:0.18em; text-transform:uppercase; color:var(--accent); margin:0 0 14px; }
+  h1{ font-family:var(--sans); font-weight:800; font-stretch:120%; font-size:clamp(34px, 5.2vw, 58px); line-height:0.92; letter-spacing:-0.03em; margin:0; text-wrap:balance; }
+  .lede{ margin:16px 0 0; max-width:64ch; color:var(--ink-2); font-size:16.5px; }
+  .asof{ text-align:right; font-family:var(--mono); font-size:12px; line-height:1.7; color:var(--ink-3); white-space:nowrap; border-left:1px solid var(--rule); padding-left:22px; }
+  .asof strong{ display:block; font-size:16px; color:var(--ink); font-weight:500; letter-spacing:-0.01em; }
+
+  .slab{ display:flex; align-items:center; gap:14px; margin:36px 0 14px; }
+  .slab h2{ font-family:var(--mono); font-size:12px; font-weight:500; letter-spacing:0.18em; text-transform:uppercase; color:var(--ink-2); margin:0; white-space:nowrap; }
+  .slab .fill{ flex:1 1 auto; height:1px; background:var(--rule-2); }
+
+  .input-panel{ background:var(--panel); border:1px solid var(--rule-2); padding:20px 22px; }
+  textarea#contractText{
+    width:100%; min-height:220px; background:var(--panel-2); border:1px solid var(--rule-2); border-radius:var(--r);
+    color:var(--ink); font-family:var(--mono); font-size:13px; line-height:1.6; padding:14px; resize:vertical;
+  }
+  .input-foot{ display:flex; align-items:center; justify-content:space-between; gap:14px; margin-top:12px; flex-wrap:wrap; }
+  .sample-link{ font-family:var(--mono); font-size:12px; color:var(--accent); cursor:pointer; text-decoration:underline; background:none; border:none; padding:0; }
+  .btn{ font-family:var(--mono); font-size:12px; letter-spacing:0.08em; text-transform:uppercase; background:var(--accent); color:#fff; border:1px solid var(--accent); padding:10px 20px; border-radius:var(--r); cursor:pointer; }
+
+  .summary{ display:flex; gap:16px; margin:24px 0; flex-wrap:wrap; }
+  .stile{ flex:1 1 140px; background:var(--panel-2); border:1px solid var(--rule-2); padding:16px 18px; }
+  .stile .n{ font-family:var(--mono); font-size:30px; font-weight:600; }
+  .stile.high .n{ color:var(--crit); }
+  .stile.medium .n{ color:var(--warn); }
+  .stile.low .n{ color:var(--ink-2); }
+  .stile.gap .n{ color:var(--accent); }
+  .stile .lbl{ font-family:var(--mono); font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-3); margin-top:4px; }
+
+  .flag{ border:1px solid var(--rule-2); background:var(--panel-2); padding:20px 22px; margin-bottom:14px; }
+  .flag-head{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .sev{ font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; padding:3px 8px; border-radius:var(--r); flex:none; }
+  .sev.high{ background:var(--crit-wash); color:var(--crit); }
+  .sev.medium{ background:var(--warn-wash); color:var(--warn); }
+  .sev.low{ background:var(--rule); color:var(--ink-2); }
+  .sev.gap{ background:var(--accent-wash); color:var(--accent); }
+  .flag-title{ font-family:var(--sans); font-weight:700; font-size:16px; }
+  .flag-body{ margin-top:12px; font-size:14px; color:var(--ink-2); line-height:1.65; }
+  .flag-body b{ color:var(--ink); }
+  .matched{ margin-top:12px; font-family:var(--mono); font-size:12px; color:var(--ink-3); background:var(--panel); border-left:3px solid var(--accent); padding:8px 12px; }
+  .matched em{ color:var(--ink); font-style:normal; background:var(--accent-wash); padding:0 2px; }
+  .redline{ margin-top:12px; font-size:13.5px; padding:10px 12px; background:var(--accent-wash); border-radius:var(--r); }
+  .redline b{ font-family:var(--mono); font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--accent); display:block; margin-bottom:4px; }
+
+  .gap-note{ font-size:12.5px; color:var(--ink-3); margin-top:10px; font-style:italic; }
+  .empty-state{ padding:40px 0; text-align:center; color:var(--ink-3); font-size:14.5px; }
+
+  footer{ margin-top:56px; padding-top:20px; border-top:1px solid var(--rule); font-size:12.5px; color:var(--ink-3); line-height:1.7; }
+
+  .sample-flag{ font-family:var(--mono); font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase;
+    color:var(--accent); margin:0 0 10px; }
+
+  /* ---------- shared responsive shell ---------- */
+  @media (max-width:760px){
+    .masthead{ grid-template-columns:1fr; align-items:start; gap:18px; }
+    .asof{ text-align:left; white-space:normal; }
+    .slab{ flex-wrap:wrap; gap:8px 14px; }
+    .slab h2{ white-space:normal; letter-spacing:0.14em; }
+    .slab .fill{ display:none; }
+    .slab .aside{ white-space:normal; flex:1 0 100%; }
+    .toolkit-nav{ gap:10px 14px; padding:12px 18px; font-size:10.5px; }
+    .toolkit-nav .home{ flex:1 0 100%; margin-right:0; padding-bottom:8px;
+      border-bottom:1px solid var(--rule); margin-bottom:2px; }
+    .toolkit-nav a{ padding:8px 0; }
+    .sheet{ padding-left:18px; padding-right:18px; }
+    textarea#contractText{ min-height:180px; font-size:12.5px; }
+    .input-foot{ flex-direction:column-reverse; align-items:stretch; gap:12px; }
+    .btn{ width:100%; padding:14px 20px; }
+    .sample-link{ text-align:center; }
+    .summary{ display:grid; grid-template-columns:repeat(2,1fr); gap:1px;
+      background:var(--rule-2); border:1px solid var(--rule-2); }
+    .stile{ border:0; flex:none; padding:14px 16px; }
+    .flag{ padding:16px 16px; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation:none !important; transition:none !important; }
+  }
+
+  /* --- masthead: the gap between lede and date block is a measured column --- */
+  .asof-lbl{ display:block; font-size:10.5px; letter-spacing:0.14em; text-transform:uppercase; color:var(--ink-3); margin-bottom:2px; }
+  /* --- native date inputs render in the browser's locale; echo the date back --- */
+  .date-echo{ display:block; font-family:var(--mono); font-size:10.5px; color:var(--ink-3); margin-top:4px; letter-spacing:0.04em; }
+  .date-echo:empty{ display:none; }
+  /* --- footers are boilerplate; label them so the eye can classify and skip --- */
+  .disc-lbl{ display:block; font-family:var(--mono); font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color:var(--ink-3); margin-bottom:8px; }
+</style>
+
+<nav class="toolkit-nav">
+  <a class="home" href="../">CORPORATE GOVERNANCE TOOLKIT</a>
+  <a href="../company-classification/">Classification</a>
+  <a href="../compliance-radar/">Compliance Radar</a>
+  <a href="../event-compliance/">Event Navigator</a>
+  <a href="../board-resolution-generator/">Board Resolutions</a>
+  <a href="../ss-checker/">SS-1 / SS-2 Checker</a>
+  <a class="current" href="../contract-risk-flagger/">Contract Risk Flagger</a>
+  <a href="../sebi-compliance-checker/">SEBI Checker</a>
+</nav>
+
+<div class="sheet">
+  <div class="masthead">
+    <div>
+      <p class="kicker">Contract clause risk-flagger</p>
+      <h1>Paste it in. See what's hiding.</h1>
+      <p class="lede">Scans pasted contract text — vendor, services, NDA, employment, or shareholder agreements — against 24 clause patterns that commonly disadvantage the reviewing party under Indian contract law, with a plain-English risk note and a concrete redline for each.</p>
+    </div>
+    <div class="asof mono">
+      <span class="asof-lbl">Reading as on</span>
+      <strong id="todayLabel">—</strong>
+      <span id="clauseCount">24</span> clause patterns tracked<br>
+      Indian Contract Act, 1872
+    </div>
+  </div>
+
+  <div class="slab"><h2>Paste contract text</h2><i class="fill"></i></div>
+  <div class="input-panel">
+    <p class="sample-flag" id="sampleFlag">Sample contract loaded — clear it and paste your own</p>
+    <textarea id="contractText" placeholder="Paste the clause or full contract text here..."></textarea>
+    <div class="input-foot">
+      <button class="sample-link" id="sampleBtn">Clear and paste my own</button>
+      <button class="btn" id="scanBtn">Scan for risk</button>
+    </div>
+  </div>
+
+  <div id="results"></div>
+
+  <footer>
+    <span class="disc-lbl">Disclaimer</span>
+    This is a pattern-matching triage aid, not legal advice and not a substitute for review by a practising Company Secretary or advocate. It matches text patterns — it does not read context, understand negation, or catch every risky drafting style, and it can both miss real risks and flag clauses that are actually fine in context. "Possible gap" items are absence-based guesses (something protective wasn't found nearby) and need a human read, not a confirmed finding. Built for portfolio purposes with reference to the Indian Contract Act, 1872, the Companies Act, 2013, the Arbitration and Conciliation Act, 1996, the Indian Stamp Act, 1899, the Registration Act, 1908, and CGST Act provisions.
+  <br><span style="display:inline-block;margin-top:8px;font-family:var(--mono);font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;">Content verified as at September 2026 · statutory figures are amended from time to time — re-check before relying on them</span>
+  </footer>
+</div>
+
+<script>
+/* ---------------- clause pattern library ---------------- */
+const CLAUSES = [
+  { id:'uncapped-indemnity', title:'Unlimited/uncapped indemnity', severity:'high',
+    triggers:['indemnify, defend and hold harmless','indemnify and keep indemnified','against any and all claims, losses, damages, liabilities','without any limitation as to amount','shall not be subject to the limitation of liability','shall not be subject to any cap on liability','full indemnity basis','unlimited liability'],
+    risk:'An indemnity like this is a standalone payment promise — it can be triggered by a third-party claim even without any proven breach. Because it usually sits outside the liability cap, a single claim can exceed the entire contract value many times over.',
+    redline:'Bring the indemnity inside the aggregate liability cap (or a separate cap at a multiple of fees paid), and limit it to third-party claims arising from proven breach or IP infringement.' },
+  { id:'consequential-loss', title:'Indirect/consequential loss left recoverable', severity:'high',
+    triggers:['loss of profits, loss of revenue and loss of goodwill','including but not limited to loss of profit','loss of anticipated savings','consequential and incidental damages shall be recoverable','including punitive and exemplary damages','business interruption losses','reputational loss'],
+    risk:"Section 73 of the Contract Act already allows losses in the parties' contemplation, so naming loss of profit or goodwill expressly makes them clearly recoverable — for a vendor on a modest fee, a client's claimed lost revenue can dwarf the contract price.",
+    redline:'Insert a mutual exclusion of indirect, special, incidental and consequential loss — naming profit, revenue, goodwill and anticipated savings — with narrow carve-outs only for confidentiality, IP infringement and wilful misconduct.' },
+  { id:'one-sided-cap', title:'Liability cap that protects only one party', severity:'high',
+    triggers:['in no event shall the company be liable',"the client's total liability shall not exceed","the customer's aggregate liability shall in no event exceed","the service provider's liability shall be unlimited",'the vendor shall be liable without limitation','no limitation of liability shall apply to the supplier','liability shall be limited to the fees paid in the preceding one (1) month'],
+    risk:'A cap naming only the buyer, or one whose carve-outs (confidentiality, IP, indemnity, data breach) cover almost every real claim, gives the appearance of symmetry with none of the substance.',
+    redline:'Make the cap mutual, set it at 100% of the preceding 12 months\' fees, and limit carve-outs to wilful misconduct, fraud, and death/personal injury.' },
+  { id:'one-sided-termination', title:'Termination for convenience — one party only', severity:'high',
+    triggers:['terminate this agreement at any time without cause','terminate this agreement for convenience','without assigning any reason whatsoever','at its sole discretion terminate this agreement','the vendor shall have no right to terminate','terminate any statement of work at any time','with immediate effect and without liability'],
+    risk:'A unilateral convenience right lets one side dissolve a fixed-term contract on short notice after the other has already committed capacity, hires, or investment against that term.',
+    redline:'Make the convenience right mutual with equal notice (60-90 days), and require payment for all work performed plus committed non-cancellable costs up to termination.' },
+  { id:'no-cure-period', title:'Termination for breach with no cure period', severity:'medium', gap:true,
+    context:['terminate this agreement with immediate effect','forthwith terminate this agreement','shall stand automatically terminated','terminate without notice and without liability','deemed a material breach'],
+    mitigating:['cure period','opportunity to cure','fails to remedy such breach','within thirty (30) days of receipt of written notice','remedy such breach within'],
+    risk:'Treating any breach as immediately terminable, with no notice-and-cure step, means a minor or disputed default can technically end the contract and trigger clawbacks or forfeiture with no paper trail.',
+    redline:'Require written notice specifying the breach with a 30-day cure period (15 days for payment defaults), reserving immediate termination only for insolvency or uncured payment default.' },
+  { id:'auto-renewal', title:'Auto-renewal with a narrow opt-out window', severity:'medium',
+    triggers:['shall automatically renew for successive','shall be deemed to be renewed','unless either party gives written notice of non-renewal at least','renewed on the same terms and conditions','failing which this agreement shall stand renewed','evergreen'],
+    risk:'Auto-renewal on identical terms locks in pricing and liability positions negotiated for a different commercial reality, and a missed 60-90 day opt-out window costs a full extra term.',
+    redline:'Convert to renewal by mutual written agreement, or shorten the opt-out notice to 30 days and cap renewals at one or two terms with a mandatory price review.' },
+  { id:'unilateral-variation', title:'Unilateral right to change price, scope or policies', severity:'medium',
+    triggers:['reserves the right to revise the fees','may amend the pricing at its sole discretion','prices are subject to change without prior notice','may update these terms from time to time by posting','continued performance shall constitute acceptance of the revised','may vary the scope of services'],
+    risk:'A right for one party to change the commercial core of the deal makes the pricing schedule non-binding, and "deemed acceptance by continued performance" removes the practical ability to object.',
+    redline:'Require mutual written agreement (a signed change order) for any change to fees or scope; if escalation is needed, fix it by a capped formula (e.g., CPI-linked, 5-8% p.a.).' },
+  { id:'pay-when-paid', title:'Pay-when-paid / back-to-back payment condition', severity:'high',
+    triggers:['payment shall be made only after receipt of payment from the client','back-to-back','shall be a condition precedent to payment','pay when paid','upon realisation of the corresponding invoice from the end customer','shall not be liable to make payment unless and until'],
+    risk:'This shifts the prime contractor\'s credit risk onto you for a customer you never assessed — validly performed work stays unpaid indefinitely if the end client disputes or defaults. It can also override the MSMED Act\'s 45-day payment rule for registered MSEs.',
+    redline:'Delete the condition precedent and fix an unconditional payment date (30-45 days from undisputed invoice); if you\'re a registered MSME, cite your Udyam registration and Sections 15-16.' },
+  { id:'uncapped-ld', title:'Penalty / liquidated damages with no cap', severity:'medium',
+    triggers:['by way of penalty','penal interest','liquidated damages at the rate of','without any maximum limit','shall be entitled to deduct such amounts from any sums due','appropriate the performance bank guarantee','time is of the essence and delay shall attract'],
+    risk:'Uncapped delay LDs, combined with a unilateral set-off right, can be deducted from your invoices before any dispute is even heard. Under Section 74, only reasonable compensation is recoverable — but that\'s an argument you win years later in arbitration, after the money is gone.',
+    redline:'Cap aggregate LDs at 5-10% of the affected order value, make them the sole remedy for delay, and restrict set-off to amounts that are admitted or finally adjudicated.' },
+  { id:'ip-assignment-overreach', title:'IP assignment sweeping in work outside the engagement', severity:'high',
+    triggers:['hereby assigns all right, title and interest','whether or not created in the course of the services','whether or not related to the services','all present and future intellectual property rights','shall be deemed works made for hire','waives all moral rights'],
+    risk:'Language covering work "whether or not related to the Services" captures independent products and prior inventions, not just the paid deliverable. A blanket moral-rights waiver is also of doubtful effect under Section 57 of the Copyright Act.',
+    redline:'Narrow the assignment to deliverables specifically created for and paid under this agreement, expressly excluding pre-existing and independently developed IP.' },
+  { id:'perpetual-licence', title:'Perpetual, royalty-free, sub-licensable licence grab', severity:'medium',
+    triggers:['perpetual, irrevocable, worldwide, royalty-free','fully paid-up, sub-licensable and transferable licence','including the right to sub-license to third parties','shall survive termination of this agreement in perpetuity','licence to use customer data for any purpose, including product improvement'],
+    risk:'Where outright assignment would be resisted, the same value is extracted through a licence that never ends, costs nothing, and can pass to third parties — including a competitor who later acquires the counterparty.',
+    redline:'Limit the licence to the term plus a short wind-down, restrict it to internal use, and delete sub-licensing/transferability except to affiliates.' },
+  { id:'background-ip-gap', title:'No carve-out for pre-existing / background IP', severity:'high', gap:true,
+    context:['hereby assigns all right, title and interest','intellectual property rights in the deliverables','shall vest in the client','deliverables shall include all components thereof','sole and absolute owner of everything delivered'],
+    mitigating:['background intellectual property','pre-existing intellectual property','background ip','vendor tools','residual knowledge','open source','pre-existing materials'],
+    risk:'Deliverables are usually assembled from reusable libraries, templates and know-how the vendor owns and reuses. If ownership sweeps those in, the vendor loses the right to use its own toolkit on the next engagement.',
+    redline:"Add an express Background IP clause: each party keeps what it owned before, and the vendor grants a licence for background IP embedded in the deliverables — annex a schedule of components and any open-source licences." },
+  { id:'one-sided-confidentiality', title:'One-sided or perpetual confidentiality obligation', severity:'medium',
+    triggers:['shall remain confidential in perpetuity','obligations of confidentiality shall survive indefinitely','shall continue without limit in time','all information disclosed by the company shall be deemed confidential','whether or not marked or identified as confidential','shall not disclose to any person for any reason whatsoever'],
+    risk:'A perpetual obligation is unadministrable, and "deemed confidential" with no marking requirement means any leak becomes a breach — usually one carved out of the liability cap.',
+    redline:'Make the obligation mutual, fix survival at 3-5 years from disclosure, and require marking or written confirmation within 15 days for oral disclosures.' },
+  { id:'no-disclosure-carveout-gap', title:'No carve-out for legally compelled disclosure', severity:'medium', gap:true,
+    context:['confidential information','shall not disclose','obligations of confidentiality'],
+    mitigating:['public domain','required by law','court of competent jurisdiction','independently developed','rightfully received from a third party','regulatory authority','required by applicable law'],
+    risk:'A confidentiality obligation with no compelled-disclosure exception puts you in an impossible position when served with a summons, tax notice, or regulatory requisition — comply and breach the contract, or refuse and face statutory consequences.',
+    redline:'Insert the standard carve-outs: public-domain information, prior knowledge, third-party receipt, independent development, and legally required disclosure (with prompt notice, not consent).' },
+  { id:'distant-jurisdiction', title:'Exclusive jurisdiction in an unconnected forum', severity:'medium',
+    triggers:['shall have exclusive jurisdiction to the exclusion of all other courts','the parties submit to the exclusive jurisdiction of the courts at','the courts of singapore shall have exclusive jurisdiction','irrevocably waives any objection to venue','no suit or proceeding shall be filed after the expiry of'],
+    risk:"A distant exclusive forum is a cost weapon — travel, local counsel and multi-year timelines make smaller claims economically unviable to pursue, often by design.",
+    redline:'Choose a forum with a real nexus (place of performance or defendant\'s office), or make jurisdiction non-exclusive so either party can sue where the cause of action arises.' },
+  { id:'onerous-arbitration', title:'Arbitration with a prohibitive seat or one-sided appointment', severity:'medium',
+    triggers:['international chamber of commerce','singapore international arbitration centre','the seat of arbitration shall be singapore','the seat and venue of arbitration shall be london','a panel of three (3) arbitrators','the sole arbitrator shall be appointed by the company','nominated from a panel maintained by'],
+    risk:'A foreign-seated, three-member tribunal can cost several crore in fees before any award — pricing a smaller party out of enforcing its own rights. Unilateral appointment by an interested party is a separate, more serious defect (TRF v. Energo; Perkins Eastman).',
+    redline:'Move to an India-seated arbitration under the Arbitration and Conciliation Act, 1996 with a sole arbitrator by mutual consent, and strike any right of one party alone to nominate the tribunal.' },
+  { id:'post-termination-noncompete', title:'Post-termination non-compete (likely void, Sec. 27)', severity:'high',
+    triggers:['shall not, for a period of two (2) years after termination','shall not directly or indirectly engage in any business competing with','anywhere in india','throughout the territory of india and abroad','shall not join any competitor of the company','restraint of trade','garden leave'],
+    risk:'Section 27 of the Contract Act voids agreements in restraint of trade, and Indian courts have consistently declined to enforce post-termination non-competes (Superintendence Co. v. Krishan Murgai). The practical risk is the threat of litigation, not enforceability.',
+    redline:'Delete the post-termination restraint citing Section 27; offer a confidentiality obligation plus a narrow non-solicit instead, or paid garden leave if the counterparty insists.' },
+  { id:'non-solicit-overreach', title:'Non-solicit extending to non-hire and long tails', severity:'medium',
+    triggers:['shall not solicit, employ or engage any employee','shall not, directly or indirectly, hire or attempt to hire','any person who was an employee at any time during the term','any customer or prospective customer of','no-hire','shall pay an amount equal to one year\'s gross salary'],
+    risk:'A no-hire clause blocking employment even on independent application is far harder to justify than a true non-solicit, and extending it to "prospective customers" makes compliance impossible to scope.',
+    redline:'Limit it to active, direct solicitation of employees materially involved in the engagement, for 6-12 months post-termination, with a carve-out for public advertisements.' },
+  { id:'one-sided-force-majeure', title:'One-sided force majeure / missing modern carve-outs', severity:'medium', gap:true,
+    context:['force majeure','acts of god, war, riot, fire and flood','beyond the reasonable control of'],
+    mitigating:['epidemic','pandemic','lockdown','change in law','government order','act of government'],
+    risk:"Section 56 frustration is unavailable where a force majeure clause already exists and simply omits the event (Energy Watchdog v. CERC) — so an event missing from a pre-2020-style list is your risk alone, and one-sided drafting turns the other side's bad luck into your default.",
+    redline:'Make the clause mutual and expand the event list to include epidemic/pandemic, government-ordered lockdown, change in law, and cyber-attack, with a mutual right to terminate if the event continues beyond 60-90 days.' },
+  { id:'one-sided-assignment', title:'Assignment rights running one way only', severity:'medium',
+    triggers:['may assign this agreement, in whole or in part, without the prior consent of','including to any affiliate, successor or acquirer','the vendor shall not assign, transfer or novate','which may be withheld at its sole and absolute discretion','a change in control shall be deemed to be an assignment'],
+    risk:'A free assignment right on one side means you can end up performing for a party you never underwrote, while your own consent right is absolute and can be withheld arbitrarily.',
+    redline:'Make assignment mutual, subject to consent not unreasonably withheld, with a carve-out for affiliates or a bona fide merger/sale of substantially all assets on notice.' },
+  { id:'stamp-duty-gap', title:'Stamp duty / registration risk pushed onto one party', severity:'medium',
+    triggers:['all stamp duty, registration charges and incidental expenses shall be borne by','the parties agree that this agreement is not required to be registered','any deficiency in stamp duty together with penalty shall be borne by','lease for a period of eleven (11) months'],
+    risk:'An unstamped or under-stamped instrument is inadmissible in evidence until impounded and the duty plus penalty (up to 10x the deficiency) is paid. A document requiring compulsory registration under Section 17 is inadmissible if unregistered, whatever the contract claims.',
+    redline:'Specify the state of execution and applicable stamp article, split the duty and registration cost, and never accept sole responsibility for "any deficiency and penalty".' },
+  { id:'gst-tds-gross-up', title:"GST/TDS gross-up and input tax credit indemnity", severity:'medium',
+    triggers:['the fees are inclusive of all taxes, duties, cesses and levies','any increase in taxes shall be borne by the service provider','the vendor shall gross up','in the event of denial of input tax credit for any reason','shall indemnify the client for any input tax credit denied or reversed','payment shall be released only upon reflection in gstr-2b'],
+    risk:'An open-ended ITC indemnity can extend to reversals caused by the tax authorities\' own actions or parties further up the chain, with interest and penalty, long after the contract ends.',
+    redline:'State fees are exclusive of GST (charged in addition, pass-through on rate change); limit any ITC indemnity to credit lost solely due to your own filing failure, capped at the GST actually charged.' },
+  { id:'rpt-approval-gap', title:'Related-party transaction with no approval condition', severity:'medium',
+    triggers:['related party','within the meaning of section 2(76) of the companies act','a director or his relative','promoter or promoter group','key managerial personnel','no approval of the shareholders shall be required for this agreement'],
+    risk:'A related-party contract requires prior Board approval (and shareholder approval above thresholds) under Section 188 unless it is both ordinary-course and arm\'s length. A clause asserting no approval is needed is a red flag, not a comfort — the statute cannot be contracted out of.',
+    redline:"Make effectiveness conditional on prior audit committee/Board approval, include an arm's-length representation, and ensure AOC-2 disclosure and the Section 189 register capture the transaction." },
+  { id:'injunctive-relief-waiver', title:'Injunctive relief reserved to one party', severity:'medium',
+    triggers:['shall be entitled to seek injunctive relief without the necessity of posting bond','without proof of actual damages','waives any right to seek injunctive or equitable relief','shall not be entitled to any injunction restraining','waives the right to seek specific performance'],
+    risk:'These clauses split remedies asymmetrically — one party gets fast interim relief, the other is confined to a damages claim years later. A contractual bar is also of doubtful enforceability given Sections 9 and 17 of the Arbitration Act.',
+    redline:'Make the equitable-relief right mutual and expressly preserve both parties\' rights to interim measures under Sections 9 and 17 of the Arbitration and Conciliation Act, 1996.' }
+];
+
+/* the masthead date, so this page's date block matches the other tools */
+(function(){
+  var el = document.getElementById('todayLabel');
+  if(el) el.textContent = new Date().toLocaleDateString('en-IN',{ day:'2-digit', month:'short', year:'numeric' });
+})();
+
+/* ---------------- matching engine ---------------- */
+function normalize(s){
+  return s.toLowerCase()
+    .replace(/[‘’]/g,"'").replace(/[“”]/g,'"')
+    .replace(/[–—]/g,'-')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+
+function findMatches(text, phrases){
+  const hits = [];
+  phrases.forEach(p=>{
+    const idx = text.indexOf(p);
+    if(idx !== -1) hits.push({phrase:p, idx});
+  });
+  return hits;
+}
+
+function snippet(original, normalized, idx, len){
+  // map roughly back to original text region for display (normalized text is same length-ish; whitespace collapsed so use normalized for display)
+  const start = Math.max(0, idx-40);
+  const end = Math.min(normalized.length, idx+len+40);
+  let s = normalized.slice(start,end);
+  const localIdx = idx-start;
+  const before = s.slice(0,localIdx);
+  const match = s.slice(localIdx, localIdx+len);
+  const after = s.slice(localIdx+len);
+  return (start>0?'…':'') + before + '<em>' + match + '</em>' + after + (end<normalized.length?'…':'');
+}
+
+function scan(){
+  const raw = document.getElementById('contractText').value;
+  const norm = normalize(raw);
+  const resultsEl = document.getElementById('results');
+
+  if(!norm){
+    // an empty state should still show the shape of the answer, and what is being looked for
+    const patternList = CLAUSES.map(c=>c.title).join(' · ');
+    resultsEl.innerHTML = `
+      <div class="slab"><h2>Scan results</h2><i class="fill"></i></div>
+      <div class="summary">
+        <div class="stile"><div class="n" style="color:var(--ink-3)">0</div><div class="lbl">High severity</div></div>
+        <div class="stile"><div class="n" style="color:var(--ink-3)">0</div><div class="lbl">Medium severity</div></div>
+        <div class="stile"><div class="n" style="color:var(--ink-3)">0</div><div class="lbl">Low severity</div></div>
+        <div class="stile"><div class="n" style="color:var(--ink-3)">0</div><div class="lbl">Possible gaps</div></div>
+      </div>
+      <div class="flag">
+        <div class="flag-head"><span class="sev low">awaiting text</span><span class="flag-title">Nothing scanned yet</span></div>
+        <div class="flag-body">Paste a clause or a full agreement above. These are the ${CLAUSES.length} patterns this tool checks for:</div>
+        <div class="matched" style="border-left-color:var(--rule-2)">${patternList}</div>
+      </div>`;
+    return;
+  }
+
+  const flags = [];
+  CLAUSES.forEach(c=>{
+    if(c.gap){
+      const ctxHits = findMatches(norm, c.context);
+      if(ctxHits.length){
+        const mitHits = findMatches(norm, c.mitigating);
+        if(!mitHits.length){
+          flags.push({ clause:c, kind:'gap', evidence: ctxHits[0] });
+        }
+      }
+    } else {
+      const hits = findMatches(norm, c.triggers);
+      if(hits.length){
+        flags.push({ clause:c, kind:'direct', evidence: hits[0], allHits: hits });
+      }
+    }
+  });
+
+  const counts = { high:0, medium:0, low:0, gap:0 };
+  flags.forEach(f=>{
+    if(f.kind==='gap') counts.gap++; else counts[f.clause.severity]++;
+  });
+
+  let html = '';
+  html += '<div class="slab"><h2>Scan results</h2><i class="fill"></i></div>';
+  html += `<div class="summary">
+    <div class="stile high"><div class="n">${counts.high}</div><div class="lbl">High severity</div></div>
+    <div class="stile medium"><div class="n">${counts.medium}</div><div class="lbl">Medium severity</div></div>
+    <div class="stile low"><div class="n">${counts.low}</div><div class="lbl">Low severity</div></div>
+    <div class="stile gap"><div class="n">${counts.gap}</div><div class="lbl">Possible gaps</div></div>
+  </div>`;
+
+  if(!flags.length){
+    html += '<div class="empty-state">No tracked patterns matched. That does not mean the contract is safe — it means none of these 24 specific patterns were found. Read it yourself too.</div>';
+  } else {
+    const direct = flags.filter(f=>f.kind==='direct').sort((a,b)=>{
+      const order = {high:0,medium:1,low:2};
+      return order[a.clause.severity]-order[b.clause.severity];
+    });
+    const gaps = flags.filter(f=>f.kind==='gap');
+
+    direct.forEach(f=>{
+      const c = f.clause;
+      html += `<div class="flag">
+        <div class="flag-head"><span class="sev ${c.severity}">${c.severity}</span><span class="flag-title">${c.title}</span></div>
+        <div class="flag-body">${c.risk}</div>
+        <div class="matched">Matched: "${snippet(raw, norm, f.evidence.idx, f.evidence.phrase.length)}"</div>
+        <div class="redline"><b>Redline to propose</b>${c.redline}</div>
+      </div>`;
+    });
+
+    if(gaps.length){
+      html += '<div class="slab" style="margin-top:32px;"><h2>Possible gaps — verify manually</h2><i class="fill"></i></div>';
+      gaps.forEach(f=>{
+        const c = f.clause;
+        html += `<div class="flag">
+          <div class="flag-head"><span class="sev gap">gap</span><span class="flag-title">${c.title}</span></div>
+          <div class="flag-body">${c.risk}</div>
+          <div class="matched">Related clause found near: "${snippet(raw, norm, f.evidence.idx, f.evidence.phrase.length)}" — but none of the protective phrases this tool looks for were found nearby.</div>
+          <div class="redline"><b>Redline to propose</b>${c.redline}</div>
+          <p class="gap-note">This is an absence-based guess, not a confirmed finding — the protective language may exist elsewhere in the document using different words. Read the full clause yourself before relying on this.</p>
+        </div>`;
+      });
+    }
+  }
+
+  resultsEl.innerHTML = html;
+}
+
+const SAMPLE = `10. Indemnity. The Service Provider shall indemnify, defend and hold harmless the Client against any and all claims, losses, damages, liabilities, including legal fees on a full indemnity basis, without any limitation as to amount.
+
+11. Term and Termination. The Client may terminate this Agreement at any time without cause by giving thirty (30) days prior written notice, without assigning any reason whatsoever. The Service Provider shall have no right to terminate except for the Client's uncured payment default.
+
+12. Payment. Payment shall be made only after receipt of payment from the Client's end customer, and shall be a condition precedent to payment being due to the Service Provider.
+
+13. Governing Law and Jurisdiction. This Agreement shall be governed by the laws of Singapore, and the Singapore International Arbitration Centre shall have exclusive jurisdiction, with a panel of three (3) arbitrators.
+
+14. Non-Compete. The Service Provider shall not, for a period of two (2) years after termination, directly or indirectly engage in any business competing with the Client anywhere in India and abroad.`;
+
+const taEl = document.getElementById('contractText');
+const sampleBtnEl = document.getElementById('sampleBtn');
+const sampleFlagEl = document.getElementById('sampleFlag');
+
+function setSampleState(isSample){
+  sampleFlagEl.style.display = isSample ? 'block' : 'none';
+  sampleBtnEl.textContent = isSample ? 'Clear and paste my own' : 'Load a sample clause';
+}
+
+document.getElementById('scanBtn').addEventListener('click', scan);
+sampleBtnEl.addEventListener('click', ()=>{
+  const showingSample = taEl.value.trim() === SAMPLE.trim();
+  taEl.value = showingSample ? '' : SAMPLE;
+  setSampleState(!showingSample);
+  scan();
+  if(showingSample) taEl.focus();
+});
+taEl.addEventListener('input', ()=>{
+  if(taEl.value.trim() !== SAMPLE.trim()) setSampleState(false);
+});
+
+// open populated rather than as an empty box — a reader with no contract to hand
+// should still see what the tool actually does
+taEl.value = SAMPLE;
+setSampleState(true);
+scan();
+</script>
+
+<script>
+/* Native date inputs render in the browser's locale, so an Indian statutory tool
+   can show mm/dd/yyyy. Echo the parsed date back in the form the tool uses. */
+(function(){
+  function fmtIN(v){
+    if(!v) return '';
+    var d = new Date(v + 'T00:00:00');
+    if(isNaN(d)) return '';
+    return d.toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric' });
+  }
+  function attach(inp){
+    if(inp.dataset.dateEcho) return;
+    inp.dataset.dateEcho = '1';
+    var e = document.createElement('span');
+    e.className = 'date-echo';
+    inp.insertAdjacentElement('afterend', e);
+    function upd(){ e.textContent = fmtIN(inp.value); }
+    inp.addEventListener('input', upd);
+    inp.addEventListener('change', upd);
+    upd();
+  }
+  function scan(){ document.querySelectorAll('input[type=date]').forEach(attach); }
+  scan();
+  if(window.MutationObserver){
+    new MutationObserver(scan).observe(document.body, { childList:true, subtree:true });
+  }
+})();
+</script>
+</html>

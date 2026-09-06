@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en-IN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SEBI Compliance Checker</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&family=Spline+Sans+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    color-scheme: light;
+    --ground:#DCE3DD; --panel:#EEF2EC; --panel-2:#E4EAE3;
+    --ink:#0F1714; --ink-2:#48544E; --ink-3:#78857E;
+    --rule:rgba(15,23,20,0.14); --rule-2:rgba(15,23,20,0.30);
+    --accent:#0A5C53; --accent-2:#0E7568; --accent-wash:rgba(10,92,83,0.10);
+    --crit:#B42E22; --crit-wash:rgba(180,46,34,0.13);
+    --now:#C8382A; --warn:#8F6206; --warn-wash:rgba(143,98,6,0.14);
+    --sans:'Archivo', ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
+    --mono:'Spline Sans Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    --r:2px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
+      --ground:#0C1310; --panel:#131C18; --panel-2:#18221E;
+      --ink:#DCE5DF; --ink-2:#94A39C; --ink-3:#6C7B74;
+      --rule:rgba(220,229,223,0.14); --rule-2:rgba(220,229,223,0.30);
+      --accent:#54C3B2; --accent-2:#74D6C6; --accent-wash:rgba(84,195,178,0.14);
+      --crit:#F0796A; --crit-wash:rgba(240,121,106,0.16);
+      --now:#F0796A; --warn:#DCA340; --warn-wash:rgba(220,163,64,0.16);
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --ground:#0C1310; --panel:#131C18; --panel-2:#18221E;
+    --ink:#DCE5DF; --ink-2:#94A39C; --ink-3:#6C7B74;
+    --rule:rgba(220,229,223,0.14); --rule-2:rgba(220,229,223,0.30);
+    --accent:#54C3B2; --accent-2:#74D6C6; --accent-wash:rgba(84,195,178,0.14);
+    --crit:#F0796A; --crit-wash:rgba(240,121,106,0.16);
+    --now:#F0796A; --warn:#DCA340; --warn-wash:rgba(220,163,64,0.16);
+  }
+  *{ box-sizing:border-box; }
+  body{ background:var(--ground); color:var(--ink); font-family:var(--sans); font-size:16px; line-height:1.55; margin:0; -webkit-font-smoothing:antialiased; }
+  .sheet{ max-width:1180px; margin:0 auto; padding:0 28px 70px; }
+  .mono{ font-family:var(--mono); font-variant-numeric:tabular-nums; }
+  a{ color:inherit; }
+  a:focus-visible, select:focus-visible, input:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+  .toolkit-nav{ display:flex; align-items:center; gap:18px; flex-wrap:wrap; padding:16px 28px; max-width:1180px; margin:0 auto;
+    font-family:var(--mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase; border-bottom:1px solid var(--rule); color:var(--ink-3); }
+  .toolkit-nav a{ text-decoration:none; color:var(--ink-3); padding:4px 0; border-bottom:2px solid transparent; }
+  .toolkit-nav a:hover{ color:var(--ink); }
+  .toolkit-nav a.current{ color:var(--accent); border-bottom-color:var(--accent); }
+  .toolkit-nav .home{ color:var(--ink); font-weight:600; letter-spacing:0.14em; margin-right:auto; }
+
+  .masthead{ display:grid; grid-template-columns:minmax(0,1fr) minmax(180px,auto); gap:28px; align-items:end; padding:40px 0 22px; border-bottom:2px solid var(--ink); }
+  .kicker{ font-family:var(--mono); font-size:11.5px; letter-spacing:0.18em; text-transform:uppercase; color:var(--accent); margin:0 0 14px; }
+  h1{ font-family:var(--sans); font-weight:800; font-stretch:120%; font-size:clamp(34px, 5.2vw, 58px); line-height:0.92; letter-spacing:-0.03em; margin:0; text-wrap:balance; }
+  .lede{ margin:16px 0 0; max-width:64ch; color:var(--ink-2); font-size:16.5px; }
+  .asof{ text-align:right; font-family:var(--mono); font-size:12px; line-height:1.7; color:var(--ink-3); white-space:nowrap; border-left:1px solid var(--rule); padding-left:22px; }
+  .asof strong{ display:block; font-size:16px; color:var(--ink); font-weight:500; letter-spacing:-0.01em; }
+
+  .controls{ display:flex; gap:20px; flex-wrap:wrap; align-items:flex-end; background:var(--panel); border:1px solid var(--rule-2); padding:18px 20px; margin-top:28px; }
+  .field{ min-width:200px; }
+  .field label{ display:block; font-family:var(--mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-2); margin-bottom:6px; }
+  .field select, .field input{ width:100%; background:var(--panel-2); border:1px solid var(--rule-2); border-radius:var(--r); color:var(--ink); font-family:var(--sans); font-size:14.5px; padding:9px 10px; }
+
+  .slab{ display:flex; align-items:center; gap:14px; margin:44px 0 14px; }
+  .slab h2{ font-family:var(--mono); font-size:12px; font-weight:500; letter-spacing:0.18em; text-transform:uppercase; color:var(--ink-2); margin:0; white-space:nowrap; }
+  .slab .fill{ flex:1 1 auto; height:1px; background:var(--rule-2); }
+  .slab .aside{ font-family:var(--sans); font-size:12.5px; font-style:italic; color:var(--ink-3); letter-spacing:0; text-transform:none; }
+
+  .rows{ border-top:1px solid var(--rule-2); }
+  .row{ display:grid; grid-template-columns:1fr max-content max-content; gap:16px 28px; align-items:center; padding:16px 4px; border-bottom:1px solid var(--rule); }
+  .row .name{ font-weight:600; font-size:14.5px; }
+  .row .basis{ font-family:var(--mono); font-size:11px; color:var(--accent); letter-spacing:0.04em; margin-top:3px; }
+  .row .note{ font-size:12.5px; color:var(--ink-2); margin-top:4px; line-height:1.5; }
+  .row .due{ font-family:var(--mono); font-size:14px; text-align:right; }
+  .row .days{ font-family:var(--mono); font-size:13px; text-align:right; }
+  .row .days.crit{ color:var(--now); font-weight:600; }
+  .row .days.warn{ color:var(--warn); }
+  .row .days.ok{ color:var(--ink-3); }
+  .pen-line{ margin-top:7px; font-family:var(--mono); font-size:11.5px; color:var(--ink-2); line-height:1.5; }
+  .pen-line i{ display:inline-block; font-style:normal; font-size:9.5px; letter-spacing:0.14em;
+    text-transform:uppercase; color:var(--crit); background:var(--crit-wash);
+    padding:2px 6px; border-radius:var(--r); margin-right:8px; }
+  @media (max-width: 760px){ .row{ grid-template-columns:1fr; } .row .due,.row .days{ text-align:left; } }
+
+  .standing{ display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:1px; background:var(--rule-2); border:1px solid var(--rule-2); margin-top:4px; }
+  .standing article{ background:var(--panel-2); padding:18px 20px; }
+  .standing .sec{ font-family:var(--mono); font-size:22px; font-weight:600; color:var(--accent); }
+  .standing .sec sup{ display:block; font-size:9.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-3); font-weight:500; margin-top:2px; }
+  .standing h3{ font-size:14.5px; margin:10px 0 6px; }
+  .standing p{ font-size:12.5px; color:var(--ink-2); line-height:1.6; margin:0; }
+  .applic-tag{ margin-top:10px; font-family:var(--mono); font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; }
+  .applic-tag.yes{ color:var(--accent); }
+  .applic-tag.no{ color:var(--ink-3); font-style:italic; letter-spacing:0.02em; text-transform:none; }
+
+  .ctl-hint{ font-size:11.5px; color:var(--ink-3); margin:5px 0 0; }
+  .window-panel{ border:1px solid var(--rule-2); padding:20px 22px; margin-bottom:16px; }
+  .window-panel.shut{ background:var(--crit-wash); border-color:var(--crit); }
+  .window-panel.open{ background:var(--accent-wash); border-color:var(--accent); }
+  .window-state{ font-family:var(--mono); font-size:11px; letter-spacing:0.14em; text-transform:uppercase; }
+  .window-panel.shut .window-state{ color:var(--crit); }
+  .window-panel.open .window-state{ color:var(--accent); }
+  .window-head{ font-size:20px; font-weight:700; letter-spacing:-0.01em; margin:6px 0 8px; }
+  .window-panel p{ margin:0; font-size:13.5px; color:var(--ink-2); line-height:1.65; max-width:78ch; }
+  .window-dates{ display:flex; gap:28px; flex-wrap:wrap; margin-top:14px; padding-top:12px; border-top:1px solid var(--rule); }
+  .window-dates div{ font-family:var(--mono); font-size:12px; color:var(--ink-3); }
+  .window-dates b{ display:block; font-size:14px; color:var(--ink); font-weight:500; margin-top:2px; }
+
+  footer{ margin-top:56px; padding-top:20px; border-top:1px solid var(--rule); font-size:12.5px; color:var(--ink-3); line-height:1.7; }
+
+  /* ---------- shared responsive shell ---------- */
+  @media (max-width:760px){
+    .masthead{ grid-template-columns:1fr; align-items:start; gap:18px; }
+    .asof{ text-align:left; white-space:normal; }
+    .slab{ flex-wrap:wrap; gap:8px 14px; }
+    .slab h2{ white-space:normal; letter-spacing:0.14em; }
+    .slab .fill{ display:none; }
+    .slab .aside{ white-space:normal; flex:1 0 100%; }
+    .toolkit-nav{ gap:10px 14px; padding:12px 18px; font-size:10.5px; }
+    .toolkit-nav .home{ flex:1 0 100%; margin-right:0; padding-bottom:8px;
+      border-bottom:1px solid var(--rule); margin-bottom:2px; }
+    .toolkit-nav a{ padding:8px 0; }
+    .sheet{ padding-left:18px; padding-right:18px; }
+    .controls{ padding:16px 16px; }
+    .field{ min-width:0; width:100%; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation:none !important; transition:none !important; }
+  }
+
+  /* --- masthead: the gap between lede and date block is a measured column --- */
+  .asof-lbl{ display:block; font-size:10.5px; letter-spacing:0.14em; text-transform:uppercase; color:var(--ink-3); margin-bottom:2px; }
+  /* --- native date inputs render in the browser's locale; echo the date back --- */
+  .date-echo{ display:block; font-family:var(--mono); font-size:10.5px; color:var(--ink-3); margin-top:4px; letter-spacing:0.04em; }
+  .date-echo:empty{ display:none; }
+  /* --- footers are boilerplate; label them so the eye can classify and skip --- */
+  .disc-lbl{ display:block; font-family:var(--mono); font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color:var(--ink-3); margin-bottom:8px; }
+</style>
+
+<nav class="toolkit-nav">
+  <a class="home" href="../">CORPORATE GOVERNANCE TOOLKIT</a>
+  <a href="../company-classification/">Classification</a>
+  <a href="../compliance-radar/">Compliance Radar</a>
+  <a href="../event-compliance/">Event Navigator</a>
+  <a href="../board-resolution-generator/">Board Resolutions</a>
+  <a href="../ss-checker/">SS-1 / SS-2 Checker</a>
+  <a href="../contract-risk-flagger/">Contract Risk Flagger</a>
+  <a class="current" href="../sebi-compliance-checker/">SEBI Checker</a>
+</nav>
+
+<div class="sheet">
+  <div class="masthead">
+    <div>
+      <p class="kicker">SEBI / capital markets compliance checker</p>
+      <h1>Listed-company deadlines, mapped out</h1>
+      <p class="lede">The recurring SEBI (LODR) filings every listed company owes the stock exchanges, plus the size-linked governance requirements that quietly kick in as a company grows — computed from today's date against the standard April–March financial year.</p>
+    </div>
+    <div class="asof mono">
+      <span class="asof-lbl">Reading as on</span>
+      <strong id="todayLabel">—</strong>
+      SEBI (LODR) Regulations, 2015
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="field">
+      <label for="sizeBand">Company, by market capitalisation</label>
+      <select id="sizeBand">
+        <option value="top100">Among top 100 listed companies</option>
+        <option value="top250">Ranked 101–250</option>
+        <option value="top1000" selected>Ranked 251–1000</option>
+        <option value="other">Outside top 1000</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="resultsDate">Latest quarter's results declared on</label>
+      <input type="date" id="resultsDate">
+      <p class="ctl-hint">Used to work out whether the insider trading window has reopened</p>
+    </div>
+  </div>
+
+  <div class="slab"><h2>Recurring filings with the stock exchange</h2><i class="fill"></i></div>
+  <div class="rows" id="recurringRows"></div>
+
+  <div class="slab"><h2>Reg. 30 — event-triggered disclosures</h2><i class="fill"></i><span class="aside">not calendar-based</span></div>
+  <div class="standing">
+    <article>
+      <div class="sec">30′<sup>Board outcome</sup></div>
+      <h3>Board meeting outcomes</h3>
+      <p>Disclose within 30 minutes of the closure of the board meeting — financial results, dividend, fundraising decisions, and other outcomes specified in Para A of Schedule III.</p>
+    </article>
+    <article>
+      <div class="sec">3h<sup>After trading hours</sup></div>
+      <h3>Board outcome after the close of trading</h3>
+      <p>Where the board meeting closes after trading hours and more than three hours before the next trading day opens, the outcome may be disclosed within three hours of closure instead of thirty minutes.</p>
+    </article>
+    <article>
+      <div class="sec">12h<sup>Within the company</sup></div>
+      <h3>Events originating within the company</h3>
+      <p>Decisions taken in a meeting other than a board meeting (e.g., by a committee) must be disclosed within 12 hours of that meeting.</p>
+    </article>
+    <article>
+      <div class="sec">24h<sup>Outside the company</sup></div>
+      <h3>Events not originating within the company</h3>
+      <p>Litigation, regulatory action, or another event outside the company's own decision-making must be disclosed within 24 hours of the company becoming aware of it.</p>
+    </article>
+    <article>
+      <div class="sec">24h<sup>Reg. 30(11)</sup></div>
+      <h3>Market rumour verification</h3>
+      <p>Confirm or deny a reported rumour within 24 hours, once material. Applicable to the top 100 listed companies from Dec 2023, and extended to the top 250 from a later date.</p>
+      <p class="applic-tag" id="rumourTag"></p>
+    </article>
+  </div>
+
+  <div class="slab"><h2>Insider trading — PIT Regulations, 2015</h2><i class="fill"></i><span class="aside">the compliance officer's standing job</span></div>
+
+  <div class="window-panel" id="windowPanel"></div>
+
+  <div class="standing">
+    <article>
+      <div class="sec">SDD<sup>Reg. 3(5) &amp; 3(6)</sup></div>
+      <h3>Structured Digital Database</h3>
+      <p>An internal database recording the nature of every piece of unpublished price sensitive information and the names and PANs of everyone who shared it and received it. It cannot be outsourced, and entries must be preserved for at least eight years.</p>
+    </article>
+    <article>
+      <div class="sec">7d<sup>Regulation 7(1)</sup></div>
+      <h3>Initial disclosure</h3>
+      <p>On appointment as a director or KMP, or on becoming a promoter, the person discloses their holding of the company's securities within seven days.</p>
+    </article>
+    <article>
+      <div class="sec">2d<sup>Regulation 7(2)</sup></div>
+      <h3>Continual disclosure</h3>
+      <p>Where a designated person's trades exceed ₹10,00,000 in value over any calendar quarter, they disclose within two trading days, and the company informs the exchanges within two trading days of receiving it.</p>
+    </article>
+    <article>
+      <div class="sec">9<sup>Regulation 9</sup></div>
+      <h3>Code of conduct &amp; pre-clearance</h3>
+      <p>Designated persons pre-clear trades, execute them within seven trading days of approval, and may not take a contra position for six months. The company's code must also maintain the Chinese wall between those with access to UPSI and the rest of the business.</p>
+    </article>
+  </div>
+
+  <div class="slab"><h2>Size-linked governance requirements</h2><i class="fill"></i></div>
+  <div class="standing">
+    <article>
+      <div class="sec">BRSR<sup>Reg. 34(2)(f)</sup></div>
+      <h3>Business Responsibility &amp; Sustainability Report</h3>
+      <p>A structured ESG disclosure filed as part of the annual report — mandatory for the top 1,000 listed companies by market capitalisation.</p>
+      <p class="applic-tag" id="brsrTag"></p>
+    </article>
+    <article>
+      <div class="sec">RMC<sup>Regulation 21</sup></div>
+      <h3>Risk Management Committee</h3>
+      <p>A board-level committee (majority independent/non-executive, at least one independent director) — mandatory for the top 1,000 listed companies, meeting at least twice a year.</p>
+      <p class="applic-tag" id="rmcTag"></p>
+    </article>
+    <article>
+      <div class="sec">DDP<sup>Regulation 43A</sup></div>
+      <h3>Dividend Distribution Policy</h3>
+      <p>A disclosed board-approved policy on dividend distribution parameters, mandatory for the top 1,000 listed companies by market capitalisation.</p>
+      <p class="applic-tag" id="ddpTag"></p>
+    </article>
+    <article>
+      <div class="sec">118<sup>Sch. V, Part C</sup></div>
+      <h3>Annual Report — 21-day AGM notice</h3>
+      <p>The annual report (including BRSR, where applicable) must reach shareholders at least 21 clear days before the AGM, and be filed with the stock exchanges no later than the day it is dispatched.</p>
+    </article>
+  </div>
+
+  <footer>
+    <span class="disc-lbl">Disclaimer</span>
+    Reference tool built for portfolio purposes on the SEBI (Listing Obligations and Disclosure Requirements) Regulations, 2015 (Regulations 13, 21, 23, 24A, 27, 30, 31, 33, 34, 43A and Schedule III), assuming a standard 1 April – 31 March financial year. Fine rates follow SEBI's Standard Operating Procedure for non-compliance with the LODR Regulations, levied by the stock exchange per day until compliance and subject to GST on top — a real exchange notice for a nine-day delay under Regulation 33 came to ₹45,000 plus 18% GST. Two items carry no published flat per-day rate and are marked accordingly rather than guessed at. Applicability thresholds, fine schedules and market-cap rankings shift periodically — confirm against SEBI's latest circulars and a practising Company Secretary before relying on this for an actual listed company.
+  <br><span style="display:inline-block;margin-top:8px;font-family:var(--mono);font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;">Content verified as at September 2026 · statutory figures are amended from time to time — re-check before relying on them</span>
+  </footer>
+</div>
+
+<script>
+function fmt(d){ return d.toLocaleDateString('en-IN',{ day:'2-digit', month:'short', year:'numeric' }); }
+const today = new Date(); today.setHours(0,0,0,0);
+document.getElementById('todayLabel').textContent = fmt(today);
+
+function daysBetween(a,b){ return Math.round((b-a)/86400000); }
+
+// next occurrence of a recurring annual event, given anchor month/day and an offset in days added after the anchor
+function nextOccurrence(anchorMonth, anchorDay, offsetDays){
+  let year = today.getFullYear();
+  function dueFor(y){
+    const anchor = new Date(y, anchorMonth, anchorDay);
+    const d = new Date(anchor);
+    d.setDate(d.getDate()+offsetDays);
+    return d;
+  }
+  let due = dueFor(year);
+  if(due < today) due = dueFor(year+1);
+  // guard: also check previous year's cycle in case we're between anchor and offset-adjusted due date
+  const prevDue = dueFor(year-1);
+  if(prevDue >= today) due = prevDue;
+  return due;
+}
+
+// nearest upcoming due date across a set of month/day anchors plus an offset —
+// used for items that recur more than once a year (quarterly or half-yearly)
+function nextFromAnchors(anchors, offsetDays){
+  const candidates = [];
+  anchors.forEach(([m,d])=>{
+    [today.getFullYear()-1, today.getFullYear(), today.getFullYear()+1].forEach(y=>{
+      const due = new Date(y,m,d);
+      due.setDate(due.getDate()+offsetDays);
+      if(due >= today) candidates.push(due);
+    });
+  });
+  candidates.sort((a,b)=>a-b);
+  return candidates[0];
+}
+function nextQuarterlyOccurrence(offsetDays){
+  return nextFromAnchors([[2,31],[5,30],[8,30],[11,31]], offsetDays);
+}
+function nextHalfYearlyOccurrence(offsetDays){
+  return nextFromAnchors([[8,30],[2,31]], offsetDays);
+}
+
+// Fines follow SEBI's SOP for non-compliance with the LODR Regulations (Annexure I
+// of the master circular), levied by the exchange per day until compliance, plus GST.
+const RECURRING = [
+  { name:'Q1 financial results', basis:'Regulation 33', note:'Quarter ended 30 June — within 45 days, with limited review report.', pen:'₹5,000 per day of delay', due:()=>nextOccurrence(5,30,45) },
+  { name:'Q2 financial results', basis:'Regulation 33', note:'Quarter ended 30 September — within 45 days, with limited review report.', pen:'₹5,000 per day of delay', due:()=>nextOccurrence(8,30,45) },
+  { name:'Q3 financial results', basis:'Regulation 33', note:'Quarter ended 31 December — within 45 days, with limited review report.', pen:'₹5,000 per day of delay', due:()=>nextOccurrence(11,31,45) },
+  { name:'Annual / Q4 financial results', basis:'Regulation 33', note:'Year ended 31 March — within 60 days, audited.', pen:'₹5,000 per day of delay', due:()=>nextOccurrence(2,31,60) },
+  { name:'Shareholding pattern', basis:'Regulation 31(1)(b)', note:'Every quarter end (31 Mar / 30 Jun / 30 Sep / 31 Dec) — within 21 days. Unchanged by the Integrated Filing reforms.', pen:'₹2,000 per day of delay — rate not independently verified against the current Master Circular', due:()=>nextQuarterlyOccurrence(21) },
+  { name:'Corporate governance compliance report', basis:'Regulation 27(2)', note:'Every quarter end — within 30 days, filed as part of Integrated Filing (Governance). The old 21-day timeline was superseded from the quarter ended 31 December 2024.', pen:'₹2,000 per day of delay', due:()=>nextQuarterlyOccurrence(30) },
+  { name:'Investor complaints statement', basis:'Regulation 13(3)', note:'Every quarter end — within 30 days, filed as part of Integrated Filing (Governance). Regulation 13(3) no longer carries its own timeline; it now reads "as may be specified by the Board".', pen:'₹1,000 per day of delay — rate not independently verified against the current Master Circular', due:()=>nextQuarterlyOccurrence(30) },
+  { name:'Related party transactions disclosure', basis:'Regulation 23(9)', note:'No longer a standalone half-yearly filing — now made on the date of publication of the standalone and consolidated financial results, through Integrated Filing (Financial).', pen:'₹5,000 per day of delay', due:()=>nextHalfYearlyOccurrence(45) },
+  { name:'Secretarial compliance report', basis:'Regulation 24A', note:'Annually, within 60 days of the financial year end (31 March).', pen:'No flat per-day rate published; non-filing is pursued as a listing-condition breach', due:()=>nextOccurrence(2,31,60) }
+];
+
+function renderRecurring(){
+  const wrap = document.getElementById('recurringRows');
+  const withDates = RECURRING.map(r=>({...r, dueDate:r.due()})).sort((a,b)=>a.dueDate-b.dueDate);
+  wrap.innerHTML = withDates.map(r=>{
+    const dr = daysBetween(today, r.dueDate);
+    const cls = dr<=7 ? 'crit' : dr<=21 ? 'warn' : 'ok';
+    return `<div class="row">
+      <div><div class="name">${r.name}</div><div class="basis">${r.basis}</div><div class="note">${r.note}</div>
+        <div class="pen-line"><i>Fine</i>${r.pen}</div></div>
+      <div class="due mono">${fmt(r.dueDate)}</div>
+      <div class="days ${cls}">${dr} day${dr===1?'':'s'} left</div>
+    </div>`;
+  }).join('');
+}
+renderRecurring();
+
+function applyBand(){
+  const band = document.getElementById('sizeBand').value;
+  const isTop1000 = band === 'top100' || band === 'top250' || band === 'top1000';
+  const isTop250 = band === 'top100' || band === 'top250';
+  const isTop100 = band === 'top100';
+
+  const set = (id, applies, textYes, textNo) => {
+    const el = document.getElementById(id);
+    el.textContent = applies ? textYes : textNo;
+    el.className = 'applic-tag ' + (applies ? 'yes' : 'no');
+  };
+  set('brsrTag', isTop1000, 'Applies — mandatory BRSR filing with the annual report', 'Not mandatory at this size — voluntary adoption still allowed');
+  set('rmcTag', isTop1000, 'Applies — Risk Management Committee required', 'Not mandatory at this size for most listed companies');
+  set('ddpTag', isTop1000, 'Applies — Dividend Distribution Policy must be disclosed', 'Not mandatory at this size');
+  set('rumourTag', isTop250, isTop100 ? 'Applies now — among the top 100' : 'Applies — within the top 250 rollout', 'Not yet applicable outside the top 250');
+}
+document.getElementById('sizeBand').addEventListener('change', applyBand);
+applyBand();
+
+/* ---------------- PIT trading window ----------------
+   Under Clause 4 of Schedule B read with Reg 9, the window is closed from the
+   end of every quarter and reopens no earlier than 48 hours after the results
+   for that quarter are made public. The compliance officer can close it in
+   other circumstances too, so this is the floor, not the whole duty. */
+function lastQuarterEnd(d){
+  const ends = [[2,31],[5,30],[8,30],[11,31]];
+  let best = null;
+  [d.getFullYear()-1, d.getFullYear()].forEach(y=>{
+    ends.forEach(([m,day])=>{
+      const e = new Date(y,m,day);
+      if(e <= d && (!best || e > best)) best = e;
+    });
+  });
+  return best;
+}
+
+function renderWindow(){
+  const panel = document.getElementById('windowPanel');
+  const qEnd = lastQuarterEnd(today);
+  const rdRaw = document.getElementById('resultsDate').value;
+  const results = rdRaw ? new Date(rdRaw+'T00:00:00') : null;
+
+  let reopen = null, isOpen = false;
+  if(results && !isNaN(results) && results >= qEnd){
+    reopen = new Date(results); reopen.setDate(reopen.getDate()+2); // 48 hours
+    isOpen = today >= reopen;
+  }
+
+  const state = isOpen ? 'open' : 'shut';
+  const stateLabel = isOpen ? 'Window open' : 'Window closed';
+  const headline = isOpen
+    ? 'Designated persons may trade, subject to pre-clearance'
+    : 'Designated persons must not trade in the company’s securities';
+  const body = isOpen
+    ? `The window reopened 48 hours after the results for the quarter ended ${fmt(qEnd)} were made public. Trades still need pre-clearance under the company's code, must be executed within seven trading days of approval, and cannot be reversed by a contra trade for six months.`
+    : (results && !isNaN(results)
+        ? `The results for the quarter ended ${fmt(qEnd)} were declared on ${fmt(results)}, so the window does not reopen until 48 hours later. Until then no designated person may deal in the company's securities.`
+        : `The window closed at the end of the quarter on ${fmt(qEnd)} and stays closed until 48 hours after that quarter's results are made public. Set the results date above to see when it reopens.`);
+
+  panel.className = 'window-panel ' + state;
+  panel.innerHTML = `
+    <div class="window-state">${stateLabel}</div>
+    <div class="window-head">${headline}</div>
+    <p>${body}</p>
+    <div class="window-dates">
+      <div>Quarter ended<b>${fmt(qEnd)}</b></div>
+      <div>Results declared<b>${results && !isNaN(results) ? fmt(results) : 'not set'}</b></div>
+      <div>Window reopens<b>${reopen ? fmt(reopen) : '48 hrs after results'}</b></div>
+    </div>`;
+}
+document.getElementById('resultsDate').addEventListener('change', renderWindow);
+renderWindow();
+</script>
+
+<script>
+/* Native date inputs render in the browser's locale, so an Indian statutory tool
+   can show mm/dd/yyyy. Echo the parsed date back in the form the tool uses. */
+(function(){
+  function fmtIN(v){
+    if(!v) return '';
+    var d = new Date(v + 'T00:00:00');
+    if(isNaN(d)) return '';
+    return d.toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric' });
+  }
+  function attach(inp){
+    if(inp.dataset.dateEcho) return;
+    inp.dataset.dateEcho = '1';
+    var e = document.createElement('span');
+    e.className = 'date-echo';
+    inp.insertAdjacentElement('afterend', e);
+    function upd(){ e.textContent = fmtIN(inp.value); }
+    inp.addEventListener('input', upd);
+    inp.addEventListener('change', upd);
+    upd();
+  }
+  function scan(){ document.querySelectorAll('input[type=date]').forEach(attach); }
+  scan();
+  if(window.MutationObserver){
+    new MutationObserver(scan).observe(document.body, { childList:true, subtree:true });
+  }
+})();
+</script>
+</html>

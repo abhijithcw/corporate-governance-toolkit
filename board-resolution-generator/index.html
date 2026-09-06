@@ -1,0 +1,758 @@
+<!doctype html>
+<html lang="en-IN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Board Resolution &amp; Minutes Generator</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&family=Spline+Sans+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    color-scheme: light;
+    --ground:#DCE3DD;
+    --panel:#EEF2EC;
+    --panel-2:#E4EAE3;
+    --ink:#0F1714;
+    --ink-2:#48544E;
+    --ink-3:#78857E;
+    --rule:rgba(15,23,20,0.14);
+    --rule-2:rgba(15,23,20,0.30);
+    --accent:#0A5C53;
+    --accent-2:#0E7568;
+    --accent-wash:rgba(10,92,83,0.10);
+    --crit:#B42E22;
+    --crit-wash:rgba(180,46,34,0.13);
+    --now:#C8382A;
+    --warn:#8F6206;
+    --warn-wash:rgba(143,98,6,0.14);
+    --sans:'Archivo', ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
+    --mono:'Spline Sans Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    --r:2px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
+      --ground:#0C1310; --panel:#131C18; --panel-2:#18221E;
+      --ink:#DCE5DF; --ink-2:#94A39C; --ink-3:#6C7B74;
+      --rule:rgba(220,229,223,0.14); --rule-2:rgba(220,229,223,0.30);
+      --accent:#54C3B2; --accent-2:#74D6C6; --accent-wash:rgba(84,195,178,0.14);
+      --crit:#F0796A; --crit-wash:rgba(240,121,106,0.16);
+      --now:#F0796A; --warn:#DCA340; --warn-wash:rgba(220,163,64,0.16);
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --ground:#0C1310; --panel:#131C18; --panel-2:#18221E;
+    --ink:#DCE5DF; --ink-2:#94A39C; --ink-3:#6C7B74;
+    --rule:rgba(220,229,223,0.14); --rule-2:rgba(220,229,223,0.30);
+    --accent:#54C3B2; --accent-2:#74D6C6; --accent-wash:rgba(84,195,178,0.14);
+    --crit:#F0796A; --crit-wash:rgba(240,121,106,0.16);
+    --now:#F0796A; --warn:#DCA340; --warn-wash:rgba(220,163,64,0.16);
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    background:var(--ground); color:var(--ink); font-family:var(--sans);
+    font-size:16px; line-height:1.55; margin:0; -webkit-font-smoothing:antialiased;
+  }
+  .sheet{ max-width:1180px; margin:0 auto; padding:0 28px 70px; }
+  .mono{ font-family:var(--mono); font-variant-numeric:tabular-nums; }
+  a{ color:inherit; }
+  a:focus-visible, input:focus-visible, select:focus-visible, button:focus-visible, textarea:focus-visible{
+    outline:2px solid var(--accent); outline-offset:2px;
+  }
+
+  /* ---------- toolkit nav ---------- */
+  .toolkit-nav{
+    display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+    padding:16px 28px; max-width:1180px; margin:0 auto;
+    font-family:var(--mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase;
+    border-bottom:1px solid var(--rule); color:var(--ink-3);
+  }
+  .toolkit-nav a{ text-decoration:none; color:var(--ink-3); padding:4px 0; border-bottom:2px solid transparent; }
+  .toolkit-nav a:hover{ color:var(--ink); }
+  .toolkit-nav a.current{ color:var(--accent); border-bottom-color:var(--accent); }
+  .toolkit-nav .home{ color:var(--ink); font-weight:600; letter-spacing:0.14em; margin-right:auto; }
+
+  /* ---------- masthead ---------- */
+  .masthead{
+    display:grid; grid-template-columns:minmax(0,1fr) auto; gap:28px; align-items:end;
+    padding:40px 0 22px; border-bottom:2px solid var(--ink);
+  }
+  .kicker{
+    font-family:var(--mono); font-size:11.5px; letter-spacing:0.18em; text-transform:uppercase;
+    color:var(--accent); margin:0 0 14px;
+  }
+  h1{
+    font-family:var(--sans); font-weight:800; font-stretch:120%;
+    font-size:clamp(34px, 5.2vw, 58px); line-height:0.92; letter-spacing:-0.03em;
+    margin:0; text-wrap:balance;
+  }
+  .lede{ margin:16px 0 0; max-width:62ch; color:var(--ink-2); font-size:16.5px; }
+  .asof{ text-align:right; font-family:var(--mono); font-size:12px; line-height:1.7; color:var(--ink-3); white-space:nowrap; border-left:1px solid var(--rule); padding-left:22px; }
+  .asof strong{ display:block; font-size:16px; color:var(--ink); font-weight:500; letter-spacing:-0.01em; }
+
+  /* ---------- section labels ---------- */
+  .slab{ display:flex; align-items:center; gap:14px; margin:44px 0 14px; }
+  .slab h2{
+    font-family:var(--mono); font-size:12px; font-weight:500; letter-spacing:0.18em;
+    text-transform:uppercase; color:var(--ink-2); margin:0; white-space:nowrap;
+  }
+  .slab .fill{ flex:1 1 auto; height:1px; background:var(--rule-2); }
+  .slab .aside{ font-family:var(--mono); font-size:12px; color:var(--ink-3); white-space:nowrap; }
+
+  /* ---------- layout: two columns ---------- */
+  .grid2{ display:grid; grid-template-columns:minmax(0,420px) minmax(0,1fr); gap:0; align-items:start; }
+  @media (max-width: 880px){ .grid2{ grid-template-columns:1fr; } }
+
+  /* ---------- controls (left column) ---------- */
+  .controls{
+    background:var(--panel); border:1px solid var(--rule-2);
+    padding:20px 22px 24px;
+  }
+  @media (min-width: 881px){
+    /* form stays reachable while the generated document scrolls beside it */
+    .controls{ position:sticky; top:24px; }
+  }
+  .field{ margin-bottom:16px; }
+  .field label{
+    display:block; font-family:var(--mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase;
+    color:var(--ink-2); margin-bottom:6px;
+  }
+  .field input[type=text], .field input[type=date], .field input[type=number],
+  .field select, .field textarea{
+    width:100%; background:var(--panel-2); border:1px solid var(--rule-2); border-radius:var(--r);
+    color:var(--ink); font-family:var(--sans); font-size:14.5px; padding:9px 10px;
+  }
+  .field textarea{ font-family:var(--mono); font-size:13.5px; min-height:88px; resize:vertical; }
+  .field .hint{ font-size:11.5px; color:var(--ink-3); margin-top:5px; }
+  .field-row{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .field-check{ display:flex; align-items:flex-start; gap:9px; margin-bottom:14px; }
+  .field-check input{ margin-top:3px; }
+  .field-check label{ font-family:var(--sans); font-size:13.5px; color:var(--ink-2); text-transform:none; letter-spacing:0; }
+
+  /* ---------- compliance check panel ---------- */
+  .checks{ margin-top:4px; }
+  .check-row{
+    display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-top:1px solid var(--rule);
+  }
+  .check-row:first-child{ border-top:none; }
+  .check-dot{ width:9px; height:9px; border-radius:50%; margin-top:5px; flex:none; }
+  .check-dot.ok{ background:var(--accent); }
+  .check-dot.bad{ background:var(--crit); }
+  .check-dot.warn{ background:var(--warn); }
+  .check-text b{ display:block; font-size:13.5px; }
+  .check-text span{ display:block; font-size:12.5px; color:var(--ink-2); margin-top:2px; }
+
+  /* ---------- output (right column) ---------- */
+  .output{ padding:20px 0 20px 28px; }
+  @media (max-width: 880px){ .output{ padding:24px 0 0; } }
+  .out-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
+  .out-tabs{ display:flex; gap:6px; }
+  /* tabs switch the view; they are not actions — only --accent fill means "primary action" */
+  .tab-btn{
+    font-family:var(--mono); font-size:11.5px; letter-spacing:0.08em; text-transform:uppercase;
+    background:transparent; border:0; border-bottom:2px solid transparent; color:var(--ink-3);
+    padding:7px 2px; margin-right:18px; border-radius:0; cursor:pointer;
+  }
+  .tab-btn:hover{ color:var(--ink); }
+  .tab-btn.active{ color:var(--accent); border-bottom-color:var(--accent); }
+  .btn-row{ display:flex; gap:8px; }
+  .btn{
+    font-family:var(--mono); font-size:11.5px; letter-spacing:0.08em; text-transform:uppercase;
+    background:var(--accent); color:#fff; border:1px solid var(--accent); padding:8px 14px;
+    border-radius:var(--r); cursor:pointer;
+  }
+  .btn.ghost{ background:transparent; color:var(--ink-2); border-color:var(--rule-2); }
+  .btn:active{ transform:translateY(1px); }
+
+  .doc{
+    background:var(--panel-2); border:1px solid var(--rule-2); padding:38px 42px;
+    font-family:var(--mono); font-size:13.5px; line-height:1.75; color:var(--ink);
+    white-space:pre-wrap; min-height:420px;
+  }
+  .doc .docline-title{ font-family:var(--sans); font-weight:700; font-size:15px; letter-spacing:0.01em; }
+  .doc-empty{ color:var(--ink-3); font-style:italic; }
+
+  select#resType{
+    width:100%; background:var(--panel-2); border:1px solid var(--accent); border-radius:var(--r);
+    color:var(--ink); font-family:var(--sans); font-weight:600; font-size:14.5px; padding:11px 12px;
+  }
+
+  .res-fields{ margin-top:16px; padding-top:16px; border-top:1px dashed var(--rule-2); }
+  .basis-note{
+    font-family:var(--mono); font-size:11.5px; color:var(--accent); letter-spacing:0.04em;
+    margin:10px 0 0; padding:8px 10px; background:var(--accent-wash); border-radius:var(--r);
+  }
+
+  footer{
+    margin-top:56px; padding-top:20px; border-top:1px solid var(--rule);
+    font-size:12.5px; color:var(--ink-3); line-height:1.7;
+  }
+
+  @media print{
+    .toolkit-nav, .masthead, .controls, .out-head, footer, .slab{ display:none !important; }
+    body{ background:#fff; }
+    .doc{ border:none; padding:0; }
+  }
+
+  /* ---------- shared responsive shell ---------- */
+  @media (max-width:760px){
+    .masthead{ grid-template-columns:1fr; align-items:start; gap:18px; }
+    .asof{ text-align:left; white-space:normal; }
+    .slab{ flex-wrap:wrap; gap:8px 14px; }
+    .slab h2{ white-space:normal; letter-spacing:0.14em; }
+    .slab .fill{ display:none; }
+    .slab .aside{ white-space:normal; flex:1 0 100%; }
+    .toolkit-nav{ gap:10px 14px; padding:12px 18px; font-size:10.5px; }
+    .toolkit-nav .home{ flex:1 0 100%; margin-right:0; padding-bottom:8px;
+      border-bottom:1px solid var(--rule); margin-bottom:2px; }
+    .toolkit-nav a{ padding:8px 0; }
+    .sheet{ padding-left:18px; padding-right:18px; }
+    .field-row{ grid-template-columns:1fr; gap:0; }
+    .doc{ padding:24px 18px; font-size:12.5px; }
+    .out-head{ gap:16px; }
+    .btn-row{ width:100%; }
+    .btn{ flex:1 1 auto; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation:none !important; transition:none !important; }
+  }
+
+  /* --- masthead: the gap between lede and date block is a measured column --- */
+  .asof-lbl{ display:block; font-size:10.5px; letter-spacing:0.14em; text-transform:uppercase; color:var(--ink-3); margin-bottom:2px; }
+  /* --- native date inputs render in the browser's locale; echo the date back --- */
+  .date-echo{ display:block; font-family:var(--mono); font-size:10.5px; color:var(--ink-3); margin-top:4px; letter-spacing:0.04em; }
+  .date-echo:empty{ display:none; }
+  /* --- footers are boilerplate; label them so the eye can classify and skip --- */
+  .disc-lbl{ display:block; font-family:var(--mono); font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color:var(--ink-3); margin-bottom:8px; }
+</style>
+
+<nav class="toolkit-nav">
+  <a class="home" href="../">CORPORATE GOVERNANCE TOOLKIT</a>
+  <a href="../company-classification/">Classification</a>
+  <a href="../compliance-radar/">Compliance Radar</a>
+  <a href="../event-compliance/">Event Navigator</a>
+  <a class="current" href="../board-resolution-generator/">Board Resolutions</a>
+  <a href="../ss-checker/">SS-1 / SS-2 Checker</a>
+  <a href="../contract-risk-flagger/">Contract Risk Flagger</a>
+  <a href="../sebi-compliance-checker/">SEBI Checker</a>
+</nav>
+
+<div class="sheet">
+  <div class="masthead">
+    <div>
+      <p class="kicker">Board resolution &amp; minutes generator</p>
+      <h1>Draft resolutions that hold up</h1>
+      <p class="lede">Fill in the meeting particulars once — get a properly worded board resolution and an SS-1-compliant draft minutes entry, with a live quorum and notice-period check.</p>
+    </div>
+    <div class="asof mono">
+      <span class="asof-lbl">Reading as on</span>
+      <strong id="todayLabel">—</strong>
+      Companies Act, 2013 · SS-1
+    </div>
+  </div>
+
+  <div class="slab"><h2>Meeting particulars</h2><i class="fill"></i></div>
+
+  <div class="grid2">
+    <div class="controls">
+      <div class="field">
+        <label for="coName">Company name</label>
+        <input type="text" id="coName" value="Riverstone Textiles Private Limited">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="mDate">Meeting date</label>
+          <input type="date" id="mDate">
+        </div>
+        <div class="field">
+          <label for="mTime">Meeting time</label>
+          <input type="text" id="mTime" value="11:00 AM">
+        </div>
+      </div>
+      <div class="field">
+        <label for="mVenue">Venue</label>
+        <input type="text" id="mVenue" value="Registered Office of the Company">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="totalDir">Total directors on board</label>
+          <input type="number" id="totalDir" min="1" value="4">
+        </div>
+        <div class="field">
+          <label for="noticeDays">Notice given (days before)</label>
+          <input type="number" id="noticeDays" min="0" value="7">
+        </div>
+      </div>
+      <div class="field">
+        <label for="dirPresent">Directors present (one per line, "Name — Designation")</label>
+        <textarea id="dirPresent">Anjali Menon — Chairperson &amp; Managing Director
+Rohit Varma — Director
+K. Sudhakaran — Independent Director</textarea>
+        <p class="hint">First line's designation is used as Chairperson unless it says otherwise.</p>
+      </div>
+      <div class="field-check">
+        <input type="checkbox" id="idPresent" checked>
+        <label for="idPresent">At least one Independent Director is present at this meeting</label>
+      </div>
+      <div class="field-check" id="shorterConsentWrap" style="display:none;">
+        <input type="checkbox" id="shorterConsent">
+        <label for="shorterConsent">Shorter notice was consented to / ratified as required under Section 173(3)</label>
+      </div>
+
+      <div class="slab" style="margin:26px 0 10px;"><h2>Live compliance check</h2><i class="fill"></i></div>
+      <div class="checks" id="checks"></div>
+    </div>
+
+    <div class="output">
+      <div class="slab" style="margin:0 0 14px;"><h2>Resolution</h2><i class="fill"></i></div>
+      <select id="resType"></select>
+      <div class="res-fields" id="resFields"></div>
+      <p class="basis-note" id="basisNote"></p>
+
+      <div class="out-head" style="margin-top:28px;">
+        <div class="out-tabs">
+          <button class="tab-btn active" data-tab="resolution">Resolution extract</button>
+          <button class="tab-btn" data-tab="minutes">Draft minutes</button>
+        </div>
+        <div class="btn-row">
+          <button class="btn ghost" id="copyBtn">Copy text</button>
+          <button class="btn" id="printBtn">Print / Save PDF</button>
+        </div>
+      </div>
+      <div class="doc" id="docView"></div>
+    </div>
+  </div>
+
+  <footer>
+    <span class="disc-lbl">Disclaimer</span>
+    Reference tool built for portfolio purposes on general Companies Act, 2013 provisions (Sections 12, 134, 139, 161, 173, 174, 175, 180, 186, 188, 203) and the Secretarial Standard on Meetings of the Board of Directors (SS-1) issued by the ICSI. Wording follows common secretarial drafting practice — have a practising Company Secretary review any resolution before it is actually passed, signed, or filed.
+  <br><span style="display:inline-block;margin-top:8px;font-family:var(--mono);font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;">Content verified as at September 2026 · statutory figures are amended from time to time — re-check before relying on them</span>
+  </footer>
+</div>
+
+<script>
+function fmtDate(iso){
+  if(!iso) return '[date]';
+  const d = new Date(iso+'T00:00:00');
+  if(isNaN(d)) return iso;
+  return d.toLocaleDateString('en-IN',{ day:'2-digit', month:'long', year:'numeric' });
+}
+function todayISO(){
+  const d = new Date();
+  return d.toISOString().slice(0,10);
+}
+document.getElementById('todayLabel').textContent = new Date().toLocaleDateString('en-IN',{ day:'2-digit', month:'short', year:'numeric' });
+document.getElementById('mDate').value = todayISO();
+
+/* ---------------- resolution templates ---------------- */
+const RESOLUTIONS = [
+  {
+    id:'add-director',
+    title:'Appointment of Additional Director',
+    section:'Section 161(1), Companies Act 2013',
+    fields:[
+      {id:'name', label:'Name of proposed director', type:'text', ph:'e.g., Priya Nair'},
+      {id:'din', label:'DIN', type:'text', ph:'e.g., 09876543'},
+      {id:'address', label:'Residential address', type:'text'},
+      {id:'category', label:'Category', type:'select', options:['Executive Director','Non-Executive Director','Independent Director']},
+      {id:'effdate', label:'Effective from', type:'date'}
+    ],
+    body:(f)=>`RESOLVED THAT pursuant to Section 161(1) of the Companies Act, 2013 and the applicable Articles of Association of the Company, and subject to such other approvals as may be necessary, ${f.name||'[Name]'} (DIN: ${f.din||'[DIN]'}), residing at ${f.address||'[address]'}, be and is hereby appointed as an Additional Director of the Company in the category of ${f.category||'[category]'}, with effect from ${fmtDate(f.effdate)}, to hold office up to the date of the next Annual General Meeting of the Company or the last date on which the Annual General Meeting should have been held, whichever is earlier, in terms of Section 161(1) of the Act.
+
+RESOLVED FURTHER THAT the consent (Form DIR-2) and intimation of interest of ${f.name||'[Name]'} have been received and placed before the Board.
+
+RESOLVED FURTHER THAT any Director or the Company Secretary of the Company be and is hereby authorised to file Form DIR-12 with the Registrar of Companies and to do all such acts, deeds and things as may be necessary to give effect to this resolution.`
+  },
+  {
+    id:'alt-director',
+    title:'Appointment of Alternate Director',
+    section:'Section 161(2), Companies Act 2013',
+    fields:[
+      {id:'original', label:'Original director (absent)', type:'text'},
+      {id:'name', label:'Proposed alternate director', type:'text'},
+      {id:'din', label:'DIN of alternate director', type:'text'},
+      {id:'reason', label:'Reason / period of absence', type:'text', ph:'e.g., absent from India for a period likely to exceed three months'}
+    ],
+    body:(f)=>`RESOLVED THAT pursuant to Section 161(2) of the Companies Act, 2013 and the Articles of Association of the Company, ${f.name||'[Name]'} (DIN: ${f.din||'[DIN]'}) be and is hereby appointed as an Alternate Director to ${f.original||'[original director]'}, who is ${f.reason||'[reason for absence]'}.
+
+RESOLVED FURTHER THAT the said appointment shall cease as soon as ${f.original||'[original director]'} returns to India, and any Director or the Company Secretary be and is hereby authorised to file Form DIR-12 with the Registrar of Companies.`
+  },
+  {
+    id:'casual-vacancy',
+    title:'Filling a Casual Vacancy',
+    section:'Section 161(4), Companies Act 2013',
+    fields:[
+      {id:'outgoing', label:'Outgoing director', type:'text'},
+      {id:'reasonout', label:'Reason for vacancy', type:'select', options:['resignation','death','disqualification','vacation of office']},
+      {id:'name', label:'Proposed replacement director', type:'text'},
+      {id:'din', label:'DIN', type:'text'}
+    ],
+    body:(f)=>`RESOLVED THAT consequent upon the casual vacancy caused by the ${f.reasonout||'[reason]'} of ${f.outgoing||'[outgoing director]'}, and pursuant to Section 161(4) of the Companies Act, 2013, ${f.name||'[Name]'} (DIN: ${f.din||'[DIN]'}) be and is hereby appointed as a Director of the Company to fill the said casual vacancy, with effect from the date hereof.
+
+RESOLVED FURTHER THAT the appointment of ${f.name||'[Name]'} shall be placed before the members of the Company for approval at the next general meeting, and shall in any case not continue beyond the date up to which the outgoing director's term of office would have continued.
+
+RESOLVED FURTHER THAT any Director or the Company Secretary be and is hereby authorised to file Form DIR-12 with the Registrar of Companies.`
+  },
+  {
+    id:'cs-appointment',
+    title:'Appointment of Company Secretary (KMP)',
+    section:'Section 203, Companies Act 2013',
+    fields:[
+      {id:'name', label:'Name of Company Secretary', type:'text'},
+      {id:'membno', label:'ICSI membership number', type:'text'},
+      {id:'joindate', label:'Date of joining', type:'date'},
+      {id:'remuneration', label:'Remuneration terms', type:'text', ph:'e.g., as per the appointment letter placed before the Board'}
+    ],
+    body:(f)=>`RESOLVED THAT pursuant to Section 203 of the Companies Act, 2013 read with the Companies (Appointment and Remuneration of Managerial Personnel) Rules, 2014, ${f.name||'[Name]'} (ICSI Membership No. ${f.membno||'[membership no.]'}) be and is hereby appointed as the Company Secretary and Key Managerial Personnel of the Company with effect from ${fmtDate(f.joindate)}, on remuneration ${f.remuneration||'[terms]'}.
+
+RESOLVED FURTHER THAT ${f.name||'[Name]'} be and is hereby authorised to sign and authenticate the financial statements, annual return, and other documents/returns of the Company as required under the Act.
+
+RESOLVED FURTHER THAT any Director be and is hereby authorised to file the requisite e-form(s) with the Registrar of Companies to give effect to this resolution.`
+  },
+  {
+    id:'first-auditor',
+    title:'Appointment of First Statutory Auditor',
+    section:'Section 139(6), Companies Act 2013',
+    fields:[
+      {id:'firm', label:'Name of audit firm', type:'text'},
+      {id:'frn', label:'Firm Registration Number (FRN)', type:'text'},
+      {id:'address', label:'Address of the firm', type:'text'},
+      {id:'incdate', label:'Date of incorporation of the company', type:'date'}
+    ],
+    body:(f)=>`RESOLVED THAT pursuant to Section 139(6) of the Companies Act, 2013, M/s. ${f.firm||'[Firm name]'}, Chartered Accountants (FRN: ${f.frn||'[FRN]'}), having their office at ${f.address||'[address]'}, be and are hereby appointed as the First Statutory Auditors of the Company, to hold office from the conclusion of this meeting until the conclusion of the first Annual General Meeting of the Company, on remuneration to be mutually agreed.
+
+RESOLVED FURTHER THAT the written consent and certificate from M/s. ${f.firm||'[Firm name]'} confirming eligibility under Section 141 of the Act have been received and placed before the Board.
+
+Note — Section 139(6) requires this appointment to be made by the Board within 30 days of the date of incorporation (${fmtDate(f.incdate)}).`
+  },
+  {
+    id:'financials',
+    title:'Approval of Financial Statements &amp; Board’s Report',
+    section:'Section 134, Companies Act 2013',
+    fields:[
+      {id:'fyend', label:'Financial year ended', type:'date'},
+      {id:'signatories', label:'Directors signing the financial statements', type:'text', ph:'e.g., Anjali Menon (Chairperson) and Rohit Varma (Director)'}
+    ],
+    body:(f)=>`RESOLVED THAT the Audited Financial Statements (Balance Sheet, Statement of Profit and Loss, Cash Flow Statement and Notes forming part thereof) of the Company for the financial year ended ${fmtDate(f.fyend)}, together with the Auditor's Report thereon, be and are hereby approved.
+
+RESOLVED FURTHER THAT the Board's Report for the said financial year, together with its annexures, be and is hereby approved, and that ${f.signatories||'[signatories]'} be and are hereby authorised to sign the Financial Statements and the Board's Report on behalf of the Board, pursuant to Section 134 of the Companies Act, 2013.
+
+RESOLVED FURTHER THAT the aforesaid documents be placed before the members at the ensuing Annual General Meeting for their adoption.`
+  },
+  {
+    id:'bank-account',
+    title:'Opening of Bank Account',
+    section:'Ordinary board business',
+    fields:[
+      {id:'bank', label:'Bank name', type:'text'},
+      {id:'branch', label:'Branch', type:'text'},
+      {id:'signatories', label:'Authorised signatories', type:'text', ph:'e.g., any two of Anjali Menon, Rohit Varma, jointly'}
+    ],
+    body:(f)=>`RESOLVED THAT a current/savings account be and is hereby opened in the name of the Company with ${f.bank||'[Bank name]'}, ${f.branch||'[branch]'}, and that the account be operated jointly/severally by ${f.signatories||'[signatories]'}.
+
+RESOLVED FURTHER THAT the Bank be and is hereby authorised to honour cheques, instructions and instruments signed on behalf of the Company by the aforesaid authorised signatories, until revoked by a further resolution of the Board, and to act on this resolution as sufficient authority.
+
+RESOLVED FURTHER THAT any Director or the Company Secretary be and is hereby authorised to sign the account opening form, furnish KYC documents and do all other acts necessary to give effect to this resolution.`
+  },
+  {
+    id:'rpt',
+    title:'Approval of Related Party Transaction',
+    section:'Section 188, Companies Act 2013',
+    fields:[
+      {id:'party', label:'Related party', type:'text'},
+      {id:'relationship', label:'Nature of relationship', type:'text', ph:'e.g., firm in which a director is a partner'},
+      {id:'nature', label:'Nature of transaction', type:'text'},
+      {id:'value', label:'Value of transaction (₹)', type:'text'},
+      {id:'arms', label:'In the ordinary course of business and at arm’s length', type:'select', options:['Yes','No']}
+    ],
+    body:(f)=>{
+      const exempt = f.arms === 'Yes';
+      const base = `RESOLVED THAT approval of the Board be and is hereby accorded for the Company entering into the following transaction with a related party, in terms of Section 188 of the Companies Act, 2013:
+
+  Related party: ${f.party||'[related party]'}
+  Relationship: ${f.relationship||'[relationship]'}
+  Nature of transaction: ${f.nature||'[nature]'}
+  Value of transaction: ${f.value?('₹ '+f.value):'[value]'}
+`;
+      if(exempt){
+        return base + `\nNote — this transaction is stated to be in the ordinary course of business and on an arm's length basis; it is accordingly exempt from the prior approval requirement under the first proviso to Section 188(1), and this Board approval is recorded as a matter of good governance and disclosure only. Interested Director(s), if any, disclosed their interest and did not participate in the discussion or vote on this item, in terms of Section 184.`;
+      }
+      return base + `\nRESOLVED FURTHER THAT since the transaction is not in the ordinary course of business and/or not on an arm's length basis, it shall additionally be placed before the members for approval by resolution, as required under the second proviso to Section 188(1), and no member who is a related party shall vote on such resolution. Interested Director(s), if any, disclosed their interest and did not participate in the discussion or vote on this item, in terms of Section 184.`;
+    }
+  },
+  {
+    id:'borrowing',
+    title:'Borrowing Powers',
+    section:'Section 180(1)(c), Companies Act 2013',
+    fields:[
+      {id:'amount', label:'Amount proposed to be borrowed (₹)', type:'text'},
+      {id:'lender', label:'Lender', type:'text'},
+      {id:'purpose', label:'Purpose', type:'text'},
+      {id:'exceeds', label:'Aggregate borrowing (incl. this) exceeds paid-up capital + free reserves', type:'select', options:['No','Yes']}
+    ],
+    body:(f)=>{
+      const needsSR = f.exceeds === 'Yes';
+      let out = `RESOLVED THAT approval of the Board be and is hereby accorded for the Company to borrow a sum of ${f.amount?('₹ '+f.amount):'[amount]'} from ${f.lender||'[lender]'} for the purpose of ${f.purpose||'[purpose]'}, on such terms and conditions as the Board may deem fit.`;
+      if(needsSR){
+        out += `\n\nRESOLVED FURTHER THAT since the aggregate of the money already borrowed together with the amount now proposed exceeds the aggregate of the Company's paid-up share capital, free reserves and securities premium, the said borrowing is subject to and conditional upon the members according their approval by way of a Special Resolution under Section 180(1)(c) of the Companies Act, 2013, and this resolution recommends the matter to the members at a general meeting.`;
+      } else {
+        out += `\n\nNote — the aggregate borrowing remains within the limits of Section 180(1)(c) (paid-up share capital, free reserves and securities premium), so this Board resolution suffices and no member approval is separately required for this borrowing.`;
+      }
+      out += `\n\nRESOLVED FURTHER THAT any Director be and is hereby authorised to execute the loan/facility documents and do all acts necessary to give effect to this resolution.`;
+      return out;
+    }
+  },
+  {
+    id:'loan-investment',
+    title:'Loan, Guarantee or Investment',
+    section:'Section 186, Companies Act 2013',
+    fields:[
+      {id:'kind', label:'Type', type:'select', options:['Loan','Guarantee/Security','Investment']},
+      {id:'recipient', label:'Recipient / body corporate', type:'text'},
+      {id:'amount', label:'Amount (₹)', type:'text'},
+      {id:'purpose', label:'Purpose', type:'text'},
+      {id:'withinLimits', label:'Within Section 186 limits (60% of paid-up capital + free reserves + securities premium, or 100% of free reserves + securities premium, whichever is higher)', type:'select', options:['Yes','No']}
+    ],
+    body:(f)=>{
+      const within = f.withinLimits === 'Yes';
+      let out = `RESOLVED THAT pursuant to Section 186 of the Companies Act, 2013, approval of the Board be and is hereby accorded to extend a ${f.kind||'[type]'} of ${f.amount?('₹ '+f.amount):'[amount]'} to/on behalf of ${f.recipient||'[recipient]'}, for the purpose of ${f.purpose||'[purpose]'}.`;
+      if(within){
+        out += `\n\nRESOLVED FURTHER THAT this ${(f.kind||'transaction').toLowerCase()} is within the limits prescribed under Section 186(2) and has been approved by all Directors present at the meeting, as required where the same is within such limits.`;
+      } else {
+        out += `\n\nRESOLVED FURTHER THAT since this ${(f.kind||'transaction').toLowerCase()} exceeds the limits prescribed under Section 186(2), it is subject to prior approval of the members by way of a Special Resolution, and this resolution recommends the matter to the members at a general meeting.`;
+      }
+      out += `\n\nRESOLVED FURTHER THAT the Company shall disclose the full particulars in the financial statements as required under Section 186(4), and any Director be and is hereby authorised to do all acts necessary to give effect to this resolution.`;
+      return out;
+    }
+  },
+  {
+    id:'regd-office',
+    title:'Change of Registered Office (within the same city/town/village)',
+    section:'Section 12, Companies Act 2013',
+    fields:[
+      {id:'oldaddr', label:'Existing registered office address', type:'text'},
+      {id:'newaddr', label:'New registered office address', type:'text'},
+      {id:'effdate', label:'Effective from', type:'date'}
+    ],
+    body:(f)=>`RESOLVED THAT the Registered Office of the Company be shifted from ${f.oldaddr||'[old address]'} to ${f.newaddr||'[new address]'}, with effect from ${fmtDate(f.effdate)}, both addresses being within the local limits of the same city, town or village, pursuant to Section 12 of the Companies Act, 2013.
+
+RESOLVED FURTHER THAT any Director or the Company Secretary be and is hereby authorised to file Form INC-22 with the Registrar of Companies within the statutory timeline and to update the Company's records, stationery and statutory registers accordingly.
+
+Note — a shift outside the local limits of the city/town/village, or across states, additionally requires a Special Resolution of the members and/or Regional Director approval, and is not covered by this Board resolution alone.`
+  },
+  {
+    id:'poa',
+    title:'Authorisation to Execute Documents / Power of Attorney',
+    section:'General authorisation',
+    fields:[
+      {id:'name', label:'Person(s) being authorised', type:'text'},
+      {id:'purpose', label:'Purpose / scope of authorisation', type:'text', ph:'e.g., signing and filing statutory forms and returns with the Registrar of Companies'}
+    ],
+    body:(f)=>`RESOLVED THAT ${f.name||'[Name(s)]'} be and is/are hereby authorised, for and on behalf of the Company, to ${f.purpose||'[purpose]'}, including signing, executing and submitting all necessary documents, applications, forms, undertakings and declarations, and to represent the Company before any statutory or regulatory authority in connection therewith.
+
+RESOLVED FURTHER THAT a certified copy of this resolution be furnished to any authority or person requiring evidence of the aforesaid authority, and the said authorisation shall remain valid until revoked by a subsequent resolution of the Board.`
+  }
+];
+
+const resSel = document.getElementById('resType');
+RESOLUTIONS.forEach((r,i)=>{
+  const o = document.createElement('option');
+  o.value = r.id; o.textContent = r.title;
+  resSel.appendChild(o);
+});
+
+let currentValues = {};
+
+function renderFields(){
+  const res = RESOLUTIONS.find(r=>r.id===resSel.value);
+  const wrap = document.getElementById('resFields');
+  wrap.innerHTML = '';
+  currentValues = {};
+  res.fields.forEach(f=>{
+    const div = document.createElement('div');
+    div.className = 'field';
+    const label = document.createElement('label');
+    label.textContent = f.label;
+    label.setAttribute('for', 'rf_'+f.id);
+    div.appendChild(label);
+    let input;
+    if(f.type === 'select'){
+      input = document.createElement('select');
+      f.options.forEach(opt=>{
+        const o = document.createElement('option');
+        o.value = opt; o.textContent = opt;
+        input.appendChild(o);
+      });
+    } else {
+      input = document.createElement('input');
+      input.type = f.type;
+      if(f.ph) input.placeholder = f.ph;
+    }
+    input.id = 'rf_'+f.id;
+    input.addEventListener('input', renderDoc);
+    input.addEventListener('change', renderDoc);
+    div.appendChild(input);
+    wrap.appendChild(div);
+    currentValues[f.id] = '';
+  });
+  document.getElementById('basisNote').textContent = 'Statutory basis: ' + res.section;
+  renderDoc();
+}
+
+function collectFieldValues(){
+  const res = RESOLUTIONS.find(r=>r.id===resSel.value);
+  const vals = {};
+  res.fields.forEach(f=>{
+    const el = document.getElementById('rf_'+f.id);
+    vals[f.id] = el ? el.value : '';
+  });
+  return vals;
+}
+
+function parseDirectors(){
+  const raw = document.getElementById('dirPresent').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  return raw.map(line=>{
+    const parts = line.split('—').map(s=>s.trim());
+    return { name: parts[0]||line, role: parts[1]||'Director' };
+  });
+}
+
+function computeChecks(){
+  const total = parseInt(document.getElementById('totalDir').value||'0',10);
+  const present = parseDirectors();
+  const requiredQuorum = Math.max(Math.ceil(total/3), 2);
+  const quorumOK = present.length >= requiredQuorum;
+
+  const noticeDays = parseInt(document.getElementById('noticeDays').value||'0',10);
+  const idPresent = document.getElementById('idPresent').checked;
+  const shorterWrap = document.getElementById('shorterConsentWrap');
+  const shorterConsent = document.getElementById('shorterConsent').checked;
+  const noticeShort = noticeDays < 7;
+  shorterWrap.style.display = noticeShort ? 'flex' : 'none';
+
+  let noticeStatus, noticeMsg;
+  if(!noticeShort){
+    noticeStatus = 'ok';
+    noticeMsg = `${noticeDays} days' notice meets the Section 173(3)/SS-1 minimum of 7 days.`;
+  } else if(idPresent || shorterConsent){
+    noticeStatus = 'warn';
+    noticeMsg = `Notice given at ${noticeDays} day(s) is shorter than 7 — permitted since ${idPresent ? 'an Independent Director is present' : 'shorter notice has been consented to/ratified'}, per the proviso to Section 173(3).`;
+  } else {
+    noticeStatus = 'bad';
+    noticeMsg = `Notice given at ${noticeDays} day(s) is shorter than 7, with no Independent Director present and no recorded consent — this meeting does not currently meet Section 173(3).`;
+  }
+
+  return {
+    total, present, requiredQuorum, quorumOK,
+    noticeStatus, noticeMsg, noticeDays
+  };
+}
+
+function renderChecks(){
+  const c = computeChecks();
+  const wrap = document.getElementById('checks');
+  wrap.innerHTML = '';
+  const rows = [
+    {
+      status: c.quorumOK ? 'ok' : 'bad',
+      title: `Quorum: ${c.present.length} of ${c.total} directors present (need ${c.requiredQuorum})`,
+      sub: c.quorumOK
+        ? `Meets Section 174 — quorum is the higher of one-third of total directors (rounded up) or 2.`
+        : `Below the Section 174 quorum. If unmet, the meeting automatically stands adjourned to the same day, same time, same place, next week.`
+    },
+    {
+      status: c.noticeStatus,
+      title: `Notice period: ${c.noticeDays} day(s)`,
+      sub: c.noticeMsg
+    },
+    {
+      status: 'ok',
+      title: `Draft minutes deadline`,
+      sub: `Must be entered in the Minutes Book within 30 days of this meeting; draft circulated to all Directors within 15 days, per SS-1.`
+    }
+  ];
+  rows.forEach(r=>{
+    const row = document.createElement('div');
+    row.className = 'check-row';
+    row.innerHTML = `<span class="check-dot ${r.status}"></span><div class="check-text"><b>${r.title}</b><span>${r.sub}</span></div>`;
+    wrap.appendChild(row);
+  });
+}
+
+let activeTab = 'resolution';
+
+function renderDoc(){
+  renderChecks();
+  const res = RESOLUTIONS.find(r=>r.id===resSel.value);
+  const f = collectFieldValues();
+  const bodyText = res.body(f);
+  const docEl = document.getElementById('docView');
+
+  if(activeTab === 'resolution'){
+    docEl.textContent = `CERTIFIED TRUE COPY OF THE RESOLUTION PASSED BY THE BOARD OF DIRECTORS OF\n${document.getElementById('coName').value.toUpperCase()}\nAT ITS MEETING HELD ON ${fmtDate(document.getElementById('mDate').value).toUpperCase()}\n\n${res.title.toUpperCase()}\n(${res.section})\n\n${bodyText}\n\nCertified True Copy\nFor ${document.getElementById('coName').value}\n\n________________________\nDirector / Company Secretary`;
+  } else {
+    const dirs = parseDirectors();
+    const chair = dirs[0] ? dirs[0].name : '[Chairperson]';
+    const presentList = dirs.map((d,i)=>`${i+1}. ${d.name} — ${d.role}`).join('\n');
+    const c = computeChecks();
+    docEl.textContent = `MINUTES OF THE MEETING OF THE BOARD OF DIRECTORS OF\n${document.getElementById('coName').value.toUpperCase()}\nHELD ON ${fmtDate(document.getElementById('mDate').value).toUpperCase()} AT ${document.getElementById('mTime').value}\nAT ${document.getElementById('mVenue').value.toUpperCase()}\n\nPRESENT:\n${presentList}\n\nIN ATTENDANCE: Company Secretary (if applicable)\n\nQuorum: ${c.present.length} of ${c.total} Director(s) present, being ${c.quorumOK ? 'not less than' : 'short of'} the quorum of ${c.requiredQuorum} required under Section 174 of the Companies Act, 2013. The Chairperson, ${chair}, took the chair and called the meeting to order.\n\nITEM: ${res.title.toUpperCase()}\n\n${bodyText}\n\nThe above resolution was passed with the assent of all Directors present. There being no further business, the meeting concluded with a vote of thanks to the Chair.\n\n\n________________________\n${chair}\nChairperson`;
+  }
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    activeTab = btn.dataset.tab;
+    renderDoc();
+  });
+});
+
+document.getElementById('copyBtn').addEventListener('click', ()=>{
+  const text = document.getElementById('docView').textContent;
+  navigator.clipboard && navigator.clipboard.writeText(text).then(()=>{
+    const btn = document.getElementById('copyBtn');
+    const old = btn.textContent;
+    btn.textContent = 'Copied';
+    setTimeout(()=>{ btn.textContent = old; }, 1400);
+  });
+});
+document.getElementById('printBtn').addEventListener('click', ()=> window.print());
+
+resSel.addEventListener('change', renderFields);
+['coName','mDate','mTime','mVenue','totalDir','noticeDays','dirPresent','idPresent','shorterConsent']
+  .forEach(id=> document.getElementById(id).addEventListener('input', renderDoc));
+document.getElementById('idPresent').addEventListener('change', renderDoc);
+
+renderFields();
+</script>
+
+<script>
+/* Native date inputs render in the browser's locale, so an Indian statutory tool
+   can show mm/dd/yyyy. Echo the parsed date back in the form the tool uses. */
+(function(){
+  function fmtIN(v){
+    if(!v) return '';
+    var d = new Date(v + 'T00:00:00');
+    if(isNaN(d)) return '';
+    return d.toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric' });
+  }
+  function attach(inp){
+    if(inp.dataset.dateEcho) return;
+    inp.dataset.dateEcho = '1';
+    var e = document.createElement('span');
+    e.className = 'date-echo';
+    inp.insertAdjacentElement('afterend', e);
+    function upd(){ e.textContent = fmtIN(inp.value); }
+    inp.addEventListener('input', upd);
+    inp.addEventListener('change', upd);
+    upd();
+  }
+  function scan(){ document.querySelectorAll('input[type=date]').forEach(attach); }
+  scan();
+  if(window.MutationObserver){
+    new MutationObserver(scan).observe(document.body, { childList:true, subtree:true });
+  }
+})();
+</script>
+</html>

@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en-IN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Company Classification</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&family=Spline+Sans+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    color-scheme: light;
+    --ground:#DCE3DD; --panel:#EEF2EC; --panel-2:#E4EAE3;
+    --ink:#0F1714; --ink-2:#48544E; --ink-3:#78857E;
+    --rule:rgba(15,23,20,0.14); --rule-2:rgba(15,23,20,0.30);
+    --accent:#0A5C53; --accent-2:#0E7568; --accent-wash:rgba(10,92,83,0.10);
+    --crit:#B42E22; --crit-wash:rgba(180,46,34,0.13);
+    --now:#C8382A; --warn:#8F6206; --warn-wash:rgba(143,98,6,0.14);
+    --sans:'Archivo', ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
+    --mono:'Spline Sans Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    --r:2px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
+      --ground:#0C1310; --panel:#131C18; --panel-2:#18221E;
+      --ink:#DCE5DF; --ink-2:#94A39C; --ink-3:#6C7B74;
+      --rule:rgba(220,229,223,0.14); --rule-2:rgba(220,229,223,0.30);
+      --accent:#54C3B2; --accent-2:#74D6C6; --accent-wash:rgba(84,195,178,0.14);
+      --crit:#F0796A; --crit-wash:rgba(240,121,106,0.16);
+      --now:#F0796A; --warn:#DCA340; --warn-wash:rgba(220,163,64,0.16);
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --ground:#0C1310; --panel:#131C18; --panel-2:#18221E;
+    --ink:#DCE5DF; --ink-2:#94A39C; --ink-3:#6C7B74;
+    --rule:rgba(220,229,223,0.14); --rule-2:rgba(220,229,223,0.30);
+    --accent:#54C3B2; --accent-2:#74D6C6; --accent-wash:rgba(84,195,178,0.14);
+    --crit:#F0796A; --crit-wash:rgba(240,121,106,0.16);
+    --now:#F0796A; --warn:#DCA340; --warn-wash:rgba(220,163,64,0.16);
+  }
+  *{ box-sizing:border-box; }
+  body{ background:var(--ground); color:var(--ink); font-family:var(--sans); font-size:16px; line-height:1.55; margin:0; -webkit-font-smoothing:antialiased; }
+  .sheet{ max-width:1180px; margin:0 auto; padding:0 28px 70px; }
+  .mono{ font-family:var(--mono); font-variant-numeric:tabular-nums; }
+  a{ color:inherit; }
+  a:focus-visible, input:focus-visible, select:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+  .toolkit-nav{ display:flex; align-items:center; gap:18px; flex-wrap:wrap; padding:16px 28px; max-width:1180px; margin:0 auto;
+    font-family:var(--mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase; border-bottom:1px solid var(--rule); color:var(--ink-3); }
+  .toolkit-nav a{ text-decoration:none; color:var(--ink-3); padding:4px 0; border-bottom:2px solid transparent; transition:color .15s ease; }
+  .toolkit-nav a:hover{ color:var(--ink); }
+  .toolkit-nav a.current{ color:var(--accent); border-bottom-color:var(--accent); }
+  .toolkit-nav .home{ color:var(--ink); font-weight:600; letter-spacing:0.14em; margin-right:auto; }
+
+  .masthead{ display:grid; grid-template-columns:minmax(0,1fr) minmax(180px,auto); gap:28px; align-items:end; padding:40px 0 22px; border-bottom:2px solid var(--ink); }
+  .kicker{ font-family:var(--mono); font-size:11.5px; letter-spacing:0.18em; text-transform:uppercase; color:var(--accent); margin:0 0 14px; }
+  h1{ font-weight:800; font-stretch:120%; font-size:clamp(34px, 5.2vw, 58px); line-height:0.92; letter-spacing:-0.03em; margin:0; text-wrap:balance; }
+  .lede{ margin:16px 0 0; max-width:62ch; color:var(--ink-2); font-size:16.5px; }
+  .asof{ text-align:right; font-family:var(--mono); font-size:12px; line-height:1.7; color:var(--ink-3); white-space:nowrap; border-left:1px solid var(--rule); padding-left:22px; }
+  .asof strong{ display:block; font-size:16px; color:var(--ink); font-weight:500; letter-spacing:-0.01em; }
+  .asof-lbl{ display:block; font-size:10.5px; letter-spacing:0.14em; text-transform:uppercase; color:var(--ink-3); margin-bottom:2px; }
+
+  .slab{ display:flex; align-items:center; gap:14px; margin:44px 0 14px; }
+  .slab h2{ font-family:var(--mono); font-size:12px; font-weight:500; letter-spacing:0.18em; text-transform:uppercase; color:var(--ink-2); margin:0; white-space:nowrap; }
+  .slab .fill{ flex:1 1 auto; height:1px; background:var(--rule-2); }
+  .slab .aside{ font-family:var(--sans); font-size:12.5px; font-style:italic; color:var(--ink-3); }
+
+  .grid2{ display:grid; grid-template-columns:minmax(0,400px) minmax(0,1fr); gap:28px; align-items:start; }
+  @media (max-width:900px){ .grid2{ grid-template-columns:1fr; } }
+
+  .controls{ background:var(--panel); border:1px solid var(--rule-2); padding:20px 22px 22px; }
+  @media (min-width:901px){ .controls{ position:sticky; top:24px; } }
+  .field{ margin-bottom:15px; }
+  .field label{ display:block; font-family:var(--mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-2); margin-bottom:6px; }
+  .field input, .field select{ width:100%; background:var(--panel-2); border:1px solid var(--rule-2); border-radius:var(--r);
+    color:var(--ink); font-family:var(--sans); font-size:14.5px; padding:9px 10px; transition:border-color .15s ease; }
+  .field input:hover, .field select:hover{ border-color:var(--ink-3); }
+  .field-row{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .field-check{ display:flex; align-items:flex-start; gap:9px; margin-bottom:12px; }
+  .field-check input{ width:auto; margin-top:3px; }
+  .field-check label{ font-family:var(--sans); font-size:13.5px; color:var(--ink-2); text-transform:none; letter-spacing:0; }
+  .unit{ font-family:var(--mono); font-size:10.5px; color:var(--ink-3); letter-spacing:0.08em; text-transform:uppercase; }
+
+  /* ---------- identity ---------- */
+  .identity{ background:var(--panel-2); border:1px solid var(--ink); padding:22px 24px; margin-bottom:20px; }
+  .identity .lbl{ font-family:var(--mono); font-size:10.5px; letter-spacing:0.14em; text-transform:uppercase; color:var(--ink-3); }
+  .identity h3{ font-size:24px; margin:8px 0 6px; letter-spacing:-0.015em; }
+  .identity p{ margin:0; font-size:13.5px; color:var(--ink-2); line-height:1.65; }
+  .tags{ display:flex; flex-wrap:wrap; gap:7px; margin-top:14px; }
+  .tag{ font-family:var(--mono); font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; padding:5px 10px; border-radius:var(--r); }
+  .tag.on{ background:var(--accent); color:#fff; }
+  .tag.off{ background:transparent; color:var(--ink-3); border:1px solid var(--rule-2); }
+
+  /* ---------- obligations ---------- */
+  .ob{ display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:14px; align-items:start;
+    padding:15px 2px; border-bottom:1px solid var(--rule); }
+  .dot{ width:9px; height:9px; border-radius:50%; margin-top:6px; }
+  .dot.yes{ background:var(--crit); }
+  .dot.no{ background:var(--rule-2); }
+  .dot.check{ background:var(--warn); }
+  .ob-name{ font-weight:600; font-size:14.5px; }
+  .ob-basis{ font-family:var(--mono); font-size:11px; color:var(--accent); letter-spacing:0.04em; margin-top:2px; }
+  .ob-why{ font-size:12.5px; color:var(--ink-2); margin-top:5px; line-height:1.55; }
+  .verdict{ font-family:var(--mono); font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; white-space:nowrap; padding-top:3px; }
+  .verdict.yes{ color:var(--crit); }
+  .verdict.no{ color:var(--ink-3); }
+  .verdict.check{ color:var(--warn); }
+  @media (max-width:600px){
+    .ob{ grid-template-columns:auto minmax(0,1fr); }
+    .verdict{ grid-column:2; padding-top:6px; }
+  }
+
+  footer{ margin-top:56px; padding-top:20px; border-top:1px solid var(--rule); font-size:12.5px; color:var(--ink-3); line-height:1.7; }
+  .disc-lbl{ display:block; font-family:var(--mono); font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color:var(--ink-3); margin-bottom:8px; }
+  .date-echo{ display:block; font-family:var(--mono); font-size:10.5px; color:var(--ink-3); margin-top:4px; letter-spacing:0.04em; }
+  .date-echo:empty{ display:none; }
+
+  @media (max-width:760px){
+    .masthead{ grid-template-columns:1fr; align-items:start; gap:18px; }
+    .asof{ text-align:left; white-space:normal; border-left:0; padding-left:0; }
+    .slab{ flex-wrap:wrap; gap:8px 14px; }
+    .slab h2{ white-space:normal; letter-spacing:0.14em; }
+    .slab .fill{ display:none; }
+    .slab .aside{ flex:1 0 100%; }
+    .toolkit-nav{ gap:10px 14px; padding:12px 18px; font-size:10.5px; }
+    .toolkit-nav .home{ flex:1 0 100%; margin-right:0; padding-bottom:8px; border-bottom:1px solid var(--rule); margin-bottom:2px; }
+    .toolkit-nav a{ padding:8px 0; }
+    .sheet{ padding-left:18px; padding-right:18px; }
+    .identity{ padding:18px 16px; }
+  }
+  @media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }
+</style>
+
+<nav class="toolkit-nav">
+  <a class="home" href="../">CORPORATE GOVERNANCE TOOLKIT</a>
+  <a class="current" href="../company-classification/">Classification</a>
+  <a href="../compliance-radar/">Compliance Radar</a>
+  <a href="../event-compliance/">Event Navigator</a>
+  <a href="../board-resolution-generator/">Board Resolutions</a>
+  <a href="../ss-checker/">SS-1 / SS-2 Checker</a>
+  <a href="../contract-risk-flagger/">Contract Risk Flagger</a>
+  <a href="../sebi-compliance-checker/">SEBI Checker</a>
+</nav>
+
+<div class="sheet">
+  <div class="masthead">
+    <div>
+      <p class="kicker">Company classification</p>
+      <h1>What are you, and what follows from it?</h1>
+      <p class="lede">Almost every obligation in the Companies Act keys off a threshold — paid-up capital, turnover, borrowings, whether you are public or private. Enter the numbers once and see what the company actually is, and which requirements switch on because of it.</p>
+    </div>
+    <div class="asof mono">
+      <span class="asof-lbl">Reading as on</span>
+      <strong id="todayLabel">—</strong>
+      Companies Act, 2013
+    </div>
+  </div>
+
+  <div class="slab"><h2>The company's numbers</h2><i class="fill"></i><span class="aside">figures in ₹ crore, from the last audited financials</span></div>
+
+  <div class="grid2">
+    <div class="controls">
+      <div class="field">
+        <label for="structure">Structure</label>
+        <select id="structure">
+          <option value="private" selected>Private company</option>
+          <option value="opc">One Person Company</option>
+          <option value="publicUnlisted">Public company — unlisted</option>
+          <option value="listed">Listed company</option>
+          <option value="sec8">Section 8 company</option>
+        </select>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="paidUp">Paid-up capital <span class="unit">₹ cr</span></label>
+          <input type="number" id="paidUp" min="0" step="0.01" value="2">
+        </div>
+        <div class="field">
+          <label for="turnover">Turnover <span class="unit">₹ cr</span></label>
+          <input type="number" id="turnover" min="0" step="0.01" value="35">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="netWorth">Net worth <span class="unit">₹ cr</span></label>
+          <input type="number" id="netWorth" min="0" step="0.01" value="12">
+        </div>
+        <div class="field">
+          <label for="netProfit">Net profit <span class="unit">₹ cr</span></label>
+          <input type="number" id="netProfit" min="0" step="0.01" value="1.2">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="borrowings">Bank / PFI borrowings <span class="unit">₹ cr</span></label>
+          <input type="number" id="borrowings" min="0" step="0.01" value="8">
+        </div>
+        <div class="field">
+          <label for="deposits">Deposits <span class="unit">₹ cr</span></label>
+          <input type="number" id="deposits" min="0" step="0.01" value="0">
+        </div>
+      </div>
+      <div class="field-check">
+        <input type="checkbox" id="isHoldSub">
+        <label for="isHoldSub">It is a holding or a subsidiary company</label>
+      </div>
+      <div class="field-check">
+        <input type="checkbox" id="isStartup">
+        <label for="isStartup">DPIIT-recognised start-up</label>
+      </div>
+      <div class="field-check">
+        <input type="checkbox" id="isDormant">
+        <label for="isDormant">Dormant company under Section 455</label>
+      </div>
+    </div>
+
+    <div class="result-col">
+      <div class="identity" id="identity"></div>
+      <div class="slab" style="margin:0 0 6px;"><h2>What switches on</h2><i class="fill"></i></div>
+      <div id="obligations"></div>
+    </div>
+  </div>
+
+  <footer>
+    <span class="disc-lbl">Disclaimer</span>
+    Reference tool built for portfolio purposes on the Companies Act, 2013 and the rules made under it — the definition of a small company in Section 2(85), Sections 92, 134, 135, 138, 139, 149, 173, 177, 178, 203 and 204, and Rules 3, 4, 5, 6, 8, 8A, 9 and 13 of the rules made under them. The small-company thresholds used here are ₹10 crore paid-up capital and ₹100 crore turnover, as substituted with effect from 1 December 2025 — a great deal of material still states the earlier ₹4 crore and ₹40 crore figures. Thresholds are applied on the figures you enter and take no account of the company's Articles, its history, or any exemption notification specific to it. The woman-director threshold under Rule 3 was not independently re-verified in the September 2026 pass and is marked accordingly.
+    <br><span style="display:inline-block;margin-top:8px;font-family:var(--mono);font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;">Content verified as at September 2026 · statutory figures are amended from time to time — re-check before relying on them</span>
+  </footer>
+</div>
+
+<script>
+const today = new Date();
+document.getElementById('todayLabel').textContent =
+  today.toLocaleDateString('en-IN',{ day:'2-digit', month:'short', year:'numeric' });
+
+const ids = ['structure','paidUp','turnover','netWorth','netProfit','borrowings','deposits','isHoldSub','isStartup','isDormant'];
+
+function readState(){
+  const n = id => parseFloat(document.getElementById(id).value || '0');
+  return {
+    structure: document.getElementById('structure').value,
+    paidUp: n('paidUp'), turnover: n('turnover'), netWorth: n('netWorth'),
+    netProfit: n('netProfit'), borrowings: n('borrowings'), deposits: n('deposits'),
+    holdSub: document.getElementById('isHoldSub').checked,
+    startup: document.getElementById('isStartup').checked,
+    dormant: document.getElementById('isDormant').checked
+  };
+}
+
+function classify(s){
+  const isPrivate = s.structure === 'private';
+  const isOPC = s.structure === 'opc';
+  const isListed = s.structure === 'listed';
+  const isSec8 = s.structure === 'sec8';
+  const isPublic = s.structure === 'publicUnlisted' || isListed;
+
+  // Sec 2(85), as substituted w.e.f. 1 December 2025: <= Rs 10 cr paid-up AND <= Rs 100 cr turnover.
+  // The proviso excludes public companies, holding and subsidiary companies, Sec 8 companies
+  // and companies governed by a special Act, whatever their size.
+  const sizeOK = s.paidUp <= 10 && s.turnover <= 100;
+  const excluded = isPublic || isSec8 || s.holdSub;
+  const isSmall = isPrivate && sizeOK && !excluded;
+
+  let smallWhy;
+  if(isSmall) smallWhy = `Paid-up capital of ₹${s.paidUp} cr is within ₹10 cr and turnover of ₹${s.turnover} cr is within ₹100 cr, and none of the exclusions apply.`;
+  else if(isOPC) smallWhy = 'An OPC is its own class. It gets most of the same relaxations as a small company without being one.';
+  else if(isPublic) smallWhy = 'A public company can never be a small company, whatever its size — the proviso to Section 2(85) excludes it outright.';
+  else if(isSec8) smallWhy = 'A Section 8 company is excluded from the definition by the proviso to Section 2(85).';
+  else if(s.holdSub) smallWhy = 'A holding or subsidiary company is excluded by the proviso to Section 2(85), however small it is.';
+  else smallWhy = `Paid-up capital of ₹${s.paidUp} cr or turnover of ₹${s.turnover} cr is over the ₹10 cr / ₹100 cr limits.`;
+
+  // relaxed cadence under Sec 173(5): small company, OPC, dormant, start-up private company.
+  // Sec 8 companies are NOT in 173(5) — they run on G.S.R. 466(E).
+  const relaxedBoard = isSmall || isOPC || s.dormant || (isPrivate && s.startup);
+
+  return { isPrivate, isOPC, isListed, isSec8, isPublic, isSmall, smallWhy, relaxedBoard, ...s };
+}
+
+function label(structure){
+  return { private:'Private company', opc:'One Person Company', publicUnlisted:'Public company (unlisted)',
+           listed:'Listed company', sec8:'Section 8 company' }[structure];
+}
+
+function renderIdentity(c){
+  const name = c.isSmall ? 'A small company' : label(c.structure);
+  const tags = [
+    ['Small company', c.isSmall],
+    ['OPC', c.isOPC],
+    ['Listed', c.isListed],
+    ['Section 8', c.isSec8],
+    ['Dormant', c.dormant],
+    ['Start-up', c.startup],
+    ['Holding / subsidiary', c.holdSub]
+  ];
+  document.getElementById('identity').innerHTML = `
+    <div class="lbl">On these figures, the company is</div>
+    <h3>${name}</h3>
+    <p>${c.smallWhy}</p>
+    <div class="tags">${tags.map(([t,on])=>`<span class="tag ${on?'on':'off'}">${t}</span>`).join('')}</div>`;
+}
+
+function renderObligations(c){
+  const rows = [];
+  const push = (name, basis, verdict, why) => rows.push({name, basis, verdict, why});
+
+  push('Annual return form', 'Section 92 · Rule 11',
+    (c.isSmall || c.isOPC) ? 'MGT-7A' : 'MGT-7',
+    (c.isSmall || c.isOPC)
+      ? 'A small company and an OPC file the abridged annual return in MGT-7A. Filing the wrong one is a rejection, not a technicality.'
+      : 'The full annual return in MGT-7 applies. Certification in MGT-8 is a separate test on top of this.');
+
+  push('Board meeting cadence', c.isSec8 ? 'Exemption notification G.S.R. 466(E)' : (c.relaxedBoard ? 'Section 173(5)' : 'Section 173(1)'),
+    c.isSec8 ? 'One per half-year' : (c.relaxedBoard ? '2 a year' : '4 a year'),
+    c.isSec8
+      ? 'A Section 8 company holds at least one board meeting in every six calendar months. It is not covered by Section 173(5), which is a common misclassification.'
+      : (c.relaxedBoard
+        ? 'One meeting in each half of the calendar year, with a gap of not less than 90 days between them — a minimum separation, not a maximum gap.'
+        : 'At least four meetings a year with no more than 120 days between any two consecutive meetings.'));
+
+  push('Cash flow statement in the financial statements', 'Section 2(40)',
+    (c.isSmall || c.isOPC || c.dormant) ? 'Exempt' : 'Required',
+    (c.isSmall || c.isOPC || c.dormant)
+      ? 'A small company, an OPC and a dormant company need not include a cash flow statement.'
+      : 'The financial statements must include a cash flow statement.');
+
+  // Rule 8A: private company at Rs 10 cr paid-up. Rule 8: listed and other public companies at Rs 10 cr.
+  const csRequired = (c.isPrivate && c.paidUp >= 10) || (c.isPublic && c.paidUp >= 10);
+  push('Whole-time Company Secretary', c.isPrivate ? 'Rule 8A' : 'Rule 8 · Section 203',
+    csRequired ? 'Required' : 'Not required',
+    csRequired
+      ? (c.isPrivate
+          ? `Paid-up capital of ₹${c.paidUp} cr is at or above the ₹10 crore threshold in Rule 8A.`
+          : `A listed company, and any other public company with paid-up capital of ₹10 crore or more, must have whole-time KMP — a managing director or CEO or manager, a Company Secretary and a CFO.`)
+      : `Paid-up capital of ₹${c.paidUp} cr is below the ₹10 crore threshold. A company secretary can still be appointed voluntarily, and the Section 92 annual return may still need certification.`);
+
+  const secAudit = c.isListed || (c.isPublic && c.paidUp >= 50) || (c.isPublic && c.turnover >= 250) || c.borrowings >= 100;
+  push('Secretarial audit — MR-3', 'Section 204 · Rule 9',
+    secAudit ? 'Required' : 'Not required',
+    secAudit
+      ? (c.borrowings >= 100 && !c.isPublic && !c.isListed
+          ? `Borrowings of ₹${c.borrowings} cr are at or above ₹100 crore — this limb catches every company, private ones included.`
+          : 'A listed company, or a public company at ₹50 crore paid-up capital or ₹250 crore turnover, needs a secretarial audit.')
+      : 'The ₹50 crore and ₹250 crore limbs apply only to public companies; a private company is caught only through the ₹100 crore borrowings limb.');
+
+  const csr = c.netWorth >= 500 || c.turnover >= 1000 || c.netProfit >= 5;
+  push('CSR committee and spend', 'Section 135',
+    csr ? 'Applies' : 'Does not apply',
+    csr
+      ? `Triggered by ${[c.netWorth>=500?'net worth ≥ ₹500 cr':'', c.turnover>=1000?'turnover ≥ ₹1,000 cr':'', c.netProfit>=5?'net profit ≥ ₹5 cr':''].filter(Boolean).join(', ')}. At least 2% of the average net profit of the three preceding financial years must be spent.`
+      : 'None of the three triggers is crossed — net worth ₹500 cr, turnover ₹1,000 cr, or net profit ₹5 cr. Note that a pending Bill proposes raising the profit trigger to ₹10 crore; it is not law.');
+
+  const intAudit = c.isListed
+    || (c.structure === 'publicUnlisted' && (c.paidUp >= 50 || c.turnover >= 200 || c.borrowings > 100 || c.deposits >= 25))
+    || ((c.isPrivate || c.isOPC) && (c.turnover >= 200 || c.borrowings > 100));
+  push('Internal audit', 'Section 138 · Rule 13',
+    intAudit ? 'Required' : 'Not required',
+    intAudit
+      ? 'A listed company always. An unlisted public company at ₹50 cr paid-up, ₹200 cr turnover, ₹100 cr borrowings or ₹25 cr deposits. A private company only on turnover or borrowings.'
+      : 'For a private company only two limbs are tested — turnover of ₹200 crore and bank or PFI borrowings above ₹100 crore. Paid-up capital and deposits are not tested.');
+
+  const rule4 = c.isListed || (c.isPublic && (c.paidUp >= 10 || c.turnover >= 100 || c.borrowings > 50));
+  push('Independent directors', 'Section 149(4) · Rule 4',
+    rule4 ? 'Required' : 'Not required',
+    rule4
+      ? 'A listed company, or a public company at ₹10 crore paid-up capital, ₹100 crore turnover, or more than ₹50 crore of aggregate outstanding loans, debentures and deposits.'
+      : 'These thresholds apply to public companies only — a private company does not appoint independent directors under the Act.');
+
+  push('Audit Committee and Nomination & Remuneration Committee', 'Sections 177 and 178 · Rule 6',
+    rule4 ? 'Required' : 'Not required',
+    rule4
+      ? 'Both committees follow the same thresholds as independent directors, and the composition rules depend on having them.'
+      : 'Not triggered on these figures. Section 8 companies are exempt from the committee requirement in any event.');
+
+  push('Woman director', 'Section 149(1) · Rule 3',
+    (c.isListed || (c.isPublic && (c.paidUp >= 100 || c.turnover >= 300))) ? 'Check' : 'Not required',
+    'Applies to a listed company and to a public company at ₹100 crore paid-up capital or ₹300 crore turnover. This threshold was not independently re-verified in the September 2026 pass — confirm it before relying on it.');
+
+  const rotation = c.isListed || (c.structure === 'publicUnlisted' && c.paidUp >= 10) || (c.isPrivate && c.paidUp >= 50) || c.borrowings >= 50 || c.deposits >= 50;
+  push('Rotation of auditors', 'Section 139(2) · Rule 5',
+    (c.isSmall || c.isOPC) ? 'Exempt' : (rotation ? 'Applies' : 'Does not apply'),
+    (c.isSmall || c.isOPC)
+      ? 'A small company and an OPC are outside the rotation requirement entirely.'
+      : (rotation
+        ? 'An individual auditor may serve one term of five consecutive years, and a firm two terms, before a five-year cooling-off.'
+        : 'Below the thresholds on these figures — listed, unlisted public at ₹10 crore paid-up, private at ₹50 crore paid-up, or ₹50 crore of borrowings or public deposits.'));
+
+  const demat = c.isPrivate && !c.isSmall;
+  push('Dematerialisation of securities', 'Rule 9B',
+    demat ? 'Applies' : 'Does not apply',
+    demat
+      ? 'A private company that is not a small company must dematerialise, within 18 months of the close of the financial year in which it ceased to be small — a rolling trigger, not a fixed date. PAS-6 then follows half-yearly.'
+      : (c.isSmall
+        ? 'A small company is outside Rule 9B. Note that the threshold rise on 1 December 2025 took a number of companies back out of this requirement.'
+        : 'Rule 9B is aimed at private companies that are not small companies.'));
+
+  push('Reduced penalties for small entities', 'Section 446B',
+    (c.isSmall || c.isOPC || c.startup) ? 'Available' : 'Not available',
+    (c.isSmall || c.isOPC || c.startup)
+      ? 'Penalties are half of what they would otherwise be, subject to the caps in the section.'
+      : 'The benefit runs to an OPC, a small company, a start-up and a producer company only.');
+
+  push('Abridged Board\'s report', 'Section 134(3A)',
+    (c.isSmall || c.isOPC) ? 'Available' : 'Not available',
+    (c.isSmall || c.isOPC)
+      ? 'A small company and an OPC may prepare the Board\'s report in the abridged form prescribed.'
+      : 'The full Board\'s report under Section 134(3) applies, with all of its mandatory disclosures.');
+
+  document.getElementById('obligations').innerHTML = rows.map(r=>{
+    const neg = ['Not required','Does not apply','Exempt','Not available'].indexOf(r.verdict) !== -1;
+    const chk = r.verdict === 'Check';
+    const cls = chk ? 'check' : (neg ? 'no' : 'yes');
+    return `<div class="ob">
+      <span class="dot ${cls}"></span>
+      <div><div class="ob-name">${r.name}</div><div class="ob-basis">${r.basis}</div><div class="ob-why">${r.why}</div></div>
+      <div class="verdict ${cls}">${r.verdict}</div>
+    </div>`;
+  }).join('');
+}
+
+function render(){
+  const c = classify(readState());
+  renderIdentity(c);
+  renderObligations(c);
+}
+ids.forEach(id=>{
+  const el = document.getElementById(id);
+  el.addEventListener('input', render);
+  el.addEventListener('change', render);
+});
+render();
+</script>
+</html>

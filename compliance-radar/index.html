@@ -1,0 +1,880 @@
+<!doctype html>
+<html lang="en-IN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compliance Radar</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&family=Spline+Sans+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    color-scheme: light;
+    --ground:#DCE3DD;
+    --panel:#EEF2EC;
+    --panel-2:#E4EAE3;
+    --ink:#0F1714;
+    --ink-2:#48544E;
+    --ink-3:#78857E;
+    --rule:rgba(15,23,20,0.14);
+    --rule-2:rgba(15,23,20,0.30);
+    --accent:#0A5C53;
+    --accent-2:#0E7568;
+    --accent-wash:rgba(10,92,83,0.10);
+    --crit:#B42E22;
+    --crit-wash:rgba(180,46,34,0.13);
+    --now:#C8382A;
+    --warn:#8F6206;
+    --warn-wash:rgba(143,98,6,0.14);
+    --sans:'Archivo', ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
+    --mono:'Spline Sans Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    --r:2px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
+      --ground:#0C1310;
+      --panel:#131C18;
+      --panel-2:#18221E;
+      --ink:#DCE5DF;
+      --ink-2:#94A39C;
+      --ink-3:#6C7B74;
+      --rule:rgba(220,229,223,0.14);
+      --rule-2:rgba(220,229,223,0.30);
+      --accent:#54C3B2;
+      --accent-2:#74D6C6;
+      --accent-wash:rgba(84,195,178,0.14);
+      --crit:#F0796A;
+      --crit-wash:rgba(240,121,106,0.16);
+      --now:#F0796A;
+      --warn:#DCA340;
+      --warn-wash:rgba(220,163,64,0.16);
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --ground:#0C1310;
+    --panel:#131C18;
+    --panel-2:#18221E;
+    --ink:#DCE5DF;
+    --ink-2:#94A39C;
+    --ink-3:#6C7B74;
+    --rule:rgba(220,229,223,0.14);
+    --rule-2:rgba(220,229,223,0.30);
+    --accent:#54C3B2;
+    --accent-2:#74D6C6;
+    --accent-wash:rgba(84,195,178,0.14);
+    --crit:#F0796A;
+    --crit-wash:rgba(240,121,106,0.16);
+    --now:#F0796A;
+    --warn:#DCA340;
+    --warn-wash:rgba(220,163,64,0.16);
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    background:var(--ground);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:16px;
+    line-height:1.55;
+    margin:0;
+    -webkit-font-smoothing:antialiased;
+  }
+  .sheet{ max-width:1180px; margin:0 auto; padding:40px 28px 60px; }
+  .mono{ font-family:var(--mono); font-variant-numeric:tabular-nums; }
+
+  a:focus-visible, input:focus-visible, select:focus-visible, button:focus-visible{
+    outline:2px solid var(--accent); outline-offset:2px;
+  }
+
+  /* ---------- masthead ---------- */
+  .masthead{
+    display:grid; grid-template-columns:minmax(0,1fr) minmax(180px,auto); gap:28px; align-items:end;
+    padding-bottom:22px; border-bottom:2px solid var(--ink);
+  }
+  .kicker{
+    font-family:var(--mono); font-size:11.5px; letter-spacing:0.18em; text-transform:uppercase;
+    color:var(--accent); margin:0 0 14px;
+  }
+  h1{
+    font-family:var(--sans); font-weight:800; font-stretch:120%;
+    font-size:clamp(34px, 5.2vw, 58px); line-height:0.92; letter-spacing:-0.03em;
+    margin:0; text-wrap:balance;
+  }
+  .lede{ margin:16px 0 0; max-width:60ch; color:var(--ink-2); font-size:16.5px; }
+  .asof{ text-align:right; font-family:var(--mono); font-size:12px; line-height:1.7; color:var(--ink-3); white-space:nowrap; border-left:1px solid var(--rule); padding-left:22px; }
+  .asof strong{ display:block; font-size:16px; color:var(--ink); font-weight:500; letter-spacing:-0.01em; }
+  .asof .nowdot{ color:var(--now); }
+
+  /* ---------- section labels ---------- */
+  .slab{ display:flex; align-items:center; gap:14px; margin:44px 0 14px; }
+  .slab h2{
+    font-family:var(--mono); font-size:12px; font-weight:500; letter-spacing:0.18em;
+    text-transform:uppercase; color:var(--ink-2); margin:0; white-space:nowrap;
+  }
+  .slab .fill{ flex:1 1 auto; height:1px; background:var(--rule-2); }
+  .slab .aside{ font-family:var(--sans); font-size:12.5px; font-style:italic; color:var(--ink-3); letter-spacing:0; text-transform:none; }
+
+  /* ---------- control strip ---------- */
+  .controls{
+    background:var(--panel); border-top:1px solid var(--rule-2); border-bottom:1px solid var(--rule-2);
+    padding:18px 20px 20px;
+  }
+  .ctl-head{ display:flex; align-items:baseline; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:16px; }
+  .chip{
+    font-family:var(--mono); font-size:11px; letter-spacing:0.16em; text-transform:uppercase;
+    color:var(--accent); border:1px solid var(--accent); padding:3px 8px; border-radius:var(--r);
+  }
+  .ctl-note{ font-family:var(--mono); font-size:12px; color:var(--ink-3); }
+  .fields{ display:grid; grid-template-columns:repeat(auto-fit, minmax(190px,1fr)); gap:20px 26px; }
+  .f{ display:flex; flex-direction:column; gap:5px; min-width:0; }
+  .f > label{
+    font-family:var(--mono); font-size:11px; letter-spacing:0.13em; text-transform:uppercase; color:var(--ink-3);
+  }
+  .f input[type="date"], .f select{
+    font-family:var(--mono); font-size:15.5px; color:var(--ink); background:transparent;
+    border:0; border-bottom:1.5px solid var(--rule-2); border-radius:0;
+    padding:5px 0 6px; width:100%; transition:border-color .18s;
+  }
+  .f input[type="date"]:hover, .f select:hover{ border-bottom-color:var(--accent); }
+  .f select{ appearance:none; cursor:pointer; padding-right:20px;
+    background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);
+    background-position:calc(100% - 9px) calc(50% + 1px), calc(100% - 4px) calc(50% + 1px);
+    background-size:5px 5px,5px 5px; background-repeat:no-repeat; }
+  .f.check{ flex-direction:row; align-items:flex-end; gap:9px; padding-bottom:7px; }
+  .f.check input{ width:15px; height:15px; accent-color:var(--accent); margin:0 0 1px; }
+  .f.check label{ font-size:14.5px; color:var(--ink); letter-spacing:0; text-transform:none; font-family:var(--sans); }
+  .hint{ margin-top:16px; padding-top:14px; border-top:1px solid var(--rule);
+    font-size:14px; color:var(--ink-2); max-width:78ch; }
+  .hint .who{ font-family:var(--mono); font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:var(--accent); margin-right:10px; }
+
+  /* ---------- the axis instrument ---------- */
+  .axis-scroll{ overflow-x:auto; }
+  .axis-inner{ position:relative; min-width:720px; height:248px; }
+  .axis-base{ position:absolute; left:0; right:0; top:190px; height:1px; background:var(--rule-2); }
+  .tick{ position:absolute; top:190px; }
+  .tick i{ position:absolute; left:0; top:0; width:1px; height:6px; background:var(--rule-2); display:block; }
+  .tick span{ position:absolute; left:5px; top:8px; font-family:var(--mono); font-size:11px;
+    letter-spacing:0.1em; color:var(--ink-3); white-space:nowrap; }
+  .tick.yr span{ color:var(--ink-2); }
+
+  .mark{ position:absolute; --h:0px; transition:left .5s cubic-bezier(.2,.7,.2,1), top .4s cubic-bezier(.2,.7,.2,1); }
+  .mark .stem{ position:absolute; left:0; top:0; width:1px; height:var(--h); background:var(--rule-2);
+    transition:height .5s cubic-bezier(.2,.7,.2,1); }
+  .mark .node{ position:absolute; left:-4px; top:calc(var(--h) - 4px); width:8px; height:8px;
+    transform:rotate(45deg); background:var(--ink-2);
+    transition:top .5s cubic-bezier(.2,.7,.2,1); }
+  .mark .lbl{ position:absolute; left:9px; top:-9px; width:100px; }
+  .mark.flip .lbl{ left:auto; right:9px; text-align:right; }
+  .mark .lbl b{ display:block; font-family:var(--mono); font-size:12.5px; font-weight:600;
+    letter-spacing:0.02em; color:var(--ink); white-space:nowrap; }
+  .mark .lbl em{ display:block; font-family:var(--mono); font-size:11px; font-style:normal;
+    color:var(--ink-3); white-space:nowrap; }
+  .mark.s-danger .node{ background:var(--crit); } .mark.s-danger .lbl b{ color:var(--crit); }
+  .mark.s-danger .stem{ background:var(--crit); opacity:.55; }
+  .mark.s-warn .node{ background:var(--warn); } .mark.s-warn .lbl b{ color:var(--warn); }
+  .mark.s-warn .stem{ background:var(--warn); opacity:.5; }
+  .mark.s-done .node{ background:var(--accent); } .mark.s-done .lbl b{ color:var(--accent); }
+  .mark.s-na .node{ background:var(--ink-3); opacity:.5; } .mark.s-na .lbl b{ color:var(--ink-3); font-style:italic; }
+  .mark.s-na .stem{ background:var(--ink-3); opacity:.25; }
+
+  .nowline{ position:absolute; top:8px; height:190px; width:1.5px; background:var(--now);
+    transition:left .5s cubic-bezier(.2,.7,.2,1); }
+  .nowline b{ position:absolute; left:6px; top:-8px; font-family:var(--mono); font-size:11px;
+    font-weight:600; letter-spacing:0.16em; color:var(--now); white-space:nowrap; }
+  .nowline u{ position:absolute; left:-3.25px; bottom:-4px; width:8px; height:8px; background:var(--now);
+    transform:rotate(45deg); text-decoration:none; }
+
+  .anchor{ position:absolute; top:190px; transition:left .5s cubic-bezier(.2,.7,.2,1); }
+  .anchor i{ position:absolute; left:0; top:0; width:1px; height:26px; background:var(--accent); display:block; }
+  .anchor span{ position:absolute; left:4px; top:26px; font-family:var(--mono); font-size:10.5px;
+    font-weight:600; letter-spacing:0.14em; color:var(--accent); white-space:nowrap; }
+  .anchor.flip span{ left:auto; right:4px; }
+
+  .axis-foot{ display:flex; justify-content:space-between; gap:20px; flex-wrap:wrap;
+    margin-top:6px; padding-top:12px; border-top:1px solid var(--rule); }
+  .keyset{ display:flex; flex-wrap:wrap; gap:6px 20px; font-family:var(--mono); font-size:11.5px;
+    letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3); }
+  .keyset span{ display:inline-flex; align-items:center; gap:7px; }
+  .keyset i{ width:7px; height:7px; transform:rotate(45deg); display:inline-block; background:var(--ink-2); }
+  .keyset i.k-crit{ background:var(--crit); } .keyset i.k-warn{ background:var(--warn); }
+  .keyset i.k-done{ background:var(--accent); }
+  .keyset i.k-now{ width:2px; height:11px; transform:none; background:var(--now); }
+  .cascade{ font-size:13.5px; color:var(--ink-2); max-width:46ch; }
+
+  /* ---------- tally ---------- */
+  .tally{ display:flex; flex-wrap:wrap; gap:0 0; border-top:1px solid var(--rule-2);
+    border-bottom:1px solid var(--rule-2); }
+  .tally div{ padding:12px 22px 12px 0; margin-right:22px; border-right:1px solid var(--rule);
+    display:flex; align-items:baseline; gap:9px; }
+  .tally div:last-child{ border-right:0; }
+  .tally b{ font-family:var(--mono); font-size:23px; font-weight:600; font-variant-numeric:tabular-nums; letter-spacing:-0.02em; }
+  .tally span{ font-family:var(--mono); font-size:11.5px; letter-spacing:0.13em; text-transform:uppercase; color:var(--ink-3); }
+  .tally .t-crit b{ color:var(--crit); } .tally .t-warn b{ color:var(--warn); }
+
+  /* ---------- register ---------- */
+  .reg-scroll{ overflow-x:auto; }
+  table.reg{ width:100%; min-width:840px; border-collapse:collapse; background:var(--panel); }
+  table.reg th{
+    font-family:var(--mono); font-size:10.5px; font-weight:500; letter-spacing:0.16em; text-transform:uppercase;
+    color:var(--ink-3); text-align:left; padding:9px 14px; border-bottom:1px solid var(--rule-2);
+    vertical-align:bottom; background:var(--ground);
+  }
+  table.reg td{ padding:13px 14px; border-bottom:1px solid var(--rule); vertical-align:top; }
+  table.reg tr:last-child td{ border-bottom:0; }
+  .c-sev{ width:3px; padding:0 !important; background:var(--rule); }
+  .c-sev.s-danger{ background:var(--crit); } .c-sev.s-warn{ background:var(--warn); }
+  .c-sev.s-done{ background:var(--accent); }
+  .c-sev.s-na{ background:var(--rule-2); }
+  .c-form{ width:96px; }
+  .c-due{ width:112px; } .c-gauge{ width:210px; } .c-status{ width:126px; }
+
+  .band td{ background:var(--ground); border-bottom:1px solid var(--rule-2) !important;
+    padding:22px 14px 7px !important; }
+  .band .bt{ font-family:var(--mono); font-size:11.5px; font-weight:600; letter-spacing:0.18em;
+    text-transform:uppercase; color:var(--ink-2); }
+  .band.b-crit .bt{ color:var(--crit); } .band.b-warn .bt{ color:var(--warn); }
+  .band.b-done .bt{ color:var(--accent); }
+  .band .bc{ font-family:var(--mono); font-size:11.5px; color:var(--ink-3); margin-left:8px; }
+
+  .form-code{ display:inline-block; font-family:var(--mono); font-size:12.5px; font-weight:600;
+    letter-spacing:0.03em; color:var(--ink); border:1px solid var(--rule-2); border-radius:var(--r);
+    padding:3px 7px; white-space:nowrap; }
+  .obl{ font-size:16px; font-weight:500; letter-spacing:-0.005em; }
+  .basis{ font-family:var(--mono); font-size:12.5px; color:var(--ink-3); margin-top:4px; }
+  .basis b{ color:var(--accent); font-weight:500; }
+  .pen{ font-size:13.5px; color:var(--ink-2); margin-top:7px; max-width:56ch; }
+  .pen i{ font-family:var(--mono); font-style:normal; font-size:10.5px; letter-spacing:0.14em;
+    text-transform:uppercase; color:var(--crit); background:var(--crit-wash); padding:2px 5px;
+    border-radius:var(--r); margin-right:8px; white-space:nowrap; }
+  .due{ font-family:var(--mono); font-size:14px; color:var(--ink); font-variant-numeric:tabular-nums; }
+  .due small{ display:block; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-3); margin-bottom:3px; }
+  .stat{ font-family:var(--mono); font-size:13px; font-weight:500; color:var(--ink-2); display:flex; gap:8px; align-items:baseline; }
+  .stat i{ width:7px; height:7px; flex:0 0 auto; transform:rotate(45deg); background:var(--ink-3); position:relative; top:-1px; }
+  .stat.s-danger{ color:var(--crit); } .stat.s-danger i{ background:var(--crit); }
+  .stat.s-warn{ color:var(--warn); } .stat.s-warn i{ background:var(--warn); }
+  .stat.s-done{ color:var(--accent); } .stat.s-done i{ background:var(--accent); }
+  .stat.s-na{ color:var(--ink-3); font-style:italic; } .stat.s-na i{ background:var(--ink-3); opacity:.5; }
+
+  .gh{ display:flex; justify-content:space-between; font-family:var(--mono); font-size:10.5px;
+    letter-spacing:0.06em; color:var(--ink-3); }
+  .gh b{ color:var(--now); font-weight:600; }
+  .gauge{ position:relative; height:20px; margin-top:1px; }
+  .g-track{ position:absolute; left:0; right:0; top:9.5px; height:1px; background:var(--rule); }
+  .g-now{ position:absolute; left:50%; top:0; bottom:0; width:1px; background:var(--now); opacity:.85; }
+  .g-bar{ position:absolute; top:9px; height:2px; background:var(--ink-3); opacity:.55; }
+  .g-bar.s-danger{ background:var(--crit); opacity:.7; } .g-bar.s-warn{ background:var(--warn); opacity:.75; }
+  .g-dot{ position:absolute; top:6px; width:8px; height:8px; margin-left:-4px; transform:rotate(45deg); background:var(--ink-2); }
+  .g-dot.s-danger{ background:var(--crit); } .g-dot.s-warn{ background:var(--warn); }
+  .g-none{ position:absolute; left:calc(50% + 10px); top:2px; font-family:var(--mono); font-size:11px;
+    letter-spacing:0.1em; text-transform:uppercase; color:var(--accent); }
+
+  /* ---------- standing obligations ---------- */
+  .standing{ display:grid; grid-template-columns:repeat(auto-fit, minmax(250px,1fr)); gap:0; }
+  .standing article{ padding:20px 24px 22px; border-left:1px solid var(--rule); }
+  .standing article:first-child{ border-left:0; padding-left:0; }
+  .standing .sec{ font-family:var(--sans); font-weight:800; font-stretch:118%; font-size:32px;
+    line-height:1; letter-spacing:-0.03em; color:var(--accent); }
+  .standing .sec sup{ font-family:var(--mono); font-size:10.5px; font-weight:500; letter-spacing:0.14em;
+    text-transform:uppercase; color:var(--ink-3); top:-1.05em; margin-left:6px; }
+  .standing h3{ font-size:15.5px; font-weight:600; margin:12px 0 6px; letter-spacing:-0.01em; }
+  .standing p{ margin:0; font-size:14px; color:var(--ink-2); line-height:1.6; }
+  .applic-tag{ margin-top:12px !important; font-family:var(--mono); font-size:10.5px; letter-spacing:0.14em; text-transform:uppercase; }
+  .applic-tag.yes{ color:var(--accent); }
+  .applic-tag.no{ color:var(--ink-3); font-style:italic; letter-spacing:0.04em; text-transform:none; }
+
+  footer{ margin-top:48px; padding-top:18px; border-top:2px solid var(--ink); }
+  footer p{ margin:0; font-family:var(--mono); font-size:12px; line-height:1.75;
+    color:var(--ink-3); max-width:96ch; }
+
+  @keyframes riseIn{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:none; } }
+  .mark.enter{ animation:riseIn .42s cubic-bezier(.2,.7,.2,1) backwards; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation:none !important; transition:none !important; }
+  }
+  @media (max-width:760px){
+    .sheet{ padding:28px 18px 48px; }
+    .masthead{ grid-template-columns:1fr; align-items:start; }
+    .asof{ text-align:left; }
+    .standing article{ border-left:0; border-top:1px solid var(--rule); padding-left:0; padding-right:0; }
+    .standing article:first-child{ border-top:0; padding-top:0; }
+  }
+
+  .toolkit-nav{ display:flex; align-items:center; gap:18px; flex-wrap:wrap; padding:16px 28px; max-width:1180px; margin:0 auto;
+    font-family:var(--mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase; border-bottom:1px solid var(--rule); color:var(--ink-3); }
+  .toolkit-nav a{ text-decoration:none; color:var(--ink-3); padding:4px 0; border-bottom:2px solid transparent; }
+  .toolkit-nav a:hover{ color:var(--ink); }
+  .toolkit-nav a.current{ color:var(--accent); border-bottom-color:var(--accent); }
+  .toolkit-nav .home{ color:var(--ink); font-weight:600; letter-spacing:0.14em; margin-right:auto; }
+
+  /* wide instruments scroll sideways — make that discoverable, not silent */
+  .axis-scroll, .reg-scroll{ position:relative; }
+  .scroll-hint{ display:none; font-family:var(--mono); font-size:10.5px; letter-spacing:0.14em;
+    text-transform:uppercase; color:var(--ink-3); text-align:right; padding:6px 2px 0; }
+
+  /* ---------- shared responsive shell ---------- */
+  @media (max-width:760px){
+    .slab{ flex-wrap:wrap; gap:8px 14px; }
+    .slab h2{ white-space:normal; letter-spacing:0.14em; }
+    .slab .fill{ display:none; }
+    .slab .aside{ white-space:normal; flex:1 0 100%; }
+    .toolkit-nav{ gap:10px 14px; padding:12px 18px; font-size:10.5px; }
+    .toolkit-nav .home{ flex:1 0 100%; margin-right:0; padding-bottom:8px;
+      border-bottom:1px solid var(--rule); margin-bottom:2px; }
+    .toolkit-nav a{ padding:8px 0; }
+    .scroll-hint{ display:block; }
+    /* two-up form fields instead of four full-width date pickers */
+    .fields{ grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:16px 18px; }
+    /* the register carries its weight without the decorative gauge column */
+    table.reg{ min-width:560px; }
+    .c-gauge, td.c-gauge{ display:none; }
+    .axis-inner{ min-width:640px; }
+  }
+
+  /* --- masthead: the gap between lede and date block is a measured column --- */
+  .asof-lbl{ display:block; font-size:10.5px; letter-spacing:0.14em; text-transform:uppercase; color:var(--ink-3); margin-bottom:2px; }
+  /* --- native date inputs render in the browser's locale; echo the date back --- */
+  .date-echo{ display:block; font-family:var(--mono); font-size:10.5px; color:var(--ink-3); margin-top:4px; letter-spacing:0.04em; }
+  .date-echo:empty{ display:none; }
+  /* --- footers are boilerplate; label them so the eye can classify and skip --- */
+  .disc-lbl{ display:block; font-family:var(--mono); font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color:var(--ink-3); margin-bottom:8px; }
+</style>
+
+<nav class="toolkit-nav">
+  <a class="home" href="../">CORPORATE GOVERNANCE TOOLKIT</a>
+  <a href="../company-classification/">Classification</a>
+  <a class="current" href="../compliance-radar/">Compliance Radar</a>
+  <a href="../event-compliance/">Event Navigator</a>
+  <a href="../board-resolution-generator/">Board Resolutions</a>
+  <a href="../ss-checker/">SS-1 / SS-2 Checker</a>
+  <a href="../contract-risk-flagger/">Contract Risk Flagger</a>
+  <a href="../sebi-compliance-checker/">SEBI Checker</a>
+</nav>
+
+<div class="sheet">
+
+  <header class="masthead">
+    <div>
+      <p class="kicker">Companies Act, 2013 &nbsp;·&nbsp; ROC filing calendar</p>
+      <h1>Compliance Radar</h1>
+      <p class="lede">Every statutory deadline a private company carries is an offset from one of two anchor dates. Set the anchors; the chain below places itself, with the section it comes from and the price of missing it.</p>
+    </div>
+    <div class="asof">
+      <span class="nowdot">▌</span> Reading as on
+      <strong id="asOf">—</strong>
+      <span id="asOfDay"></span>
+    </div>
+  </header>
+
+  <div class="slab"><h2>Anchor dates</h2><i class="fill"></i><span class="aside" id="profileStrip"></span></div>
+
+  <div class="controls">
+    <div class="ctl-head">
+      <span class="chip">Example company — edit any field</span>
+      <span class="ctl-note">Nothing is stored; every figure recomputes as you type.</span>
+    </div>
+    <div class="fields">
+      <div class="f">
+        <label for="companyType">Company type</label>
+        <select id="companyType">
+          <option value="private">Private Limited Company</option>
+          <option value="small">Small Company</option>
+          <option value="opc">One Person Company (OPC)</option>
+        </select>
+      </div>
+      <div class="f">
+        <label for="incDate">Date of incorporation</label>
+        <input type="date" id="incDate" value="2023-06-15">
+      </div>
+      <div class="f">
+        <label for="fyEnd">Financial year end tracked</label>
+        <input type="date" id="fyEnd" value="2026-03-31">
+      </div>
+      <div class="f check" id="firstAgmField">
+        <input type="checkbox" id="firstAgm">
+        <label for="firstAgm">This is the first AGM</label>
+      </div>
+      <div class="f" id="agmHeldField">
+        <label for="agmHeld">AGM held on — blank if not yet</label>
+        <input type="date" id="agmHeld" value="">
+      </div>
+      <div class="f check">
+        <input type="checkbox" id="employees10" checked>
+        <label for="employees10">10 or more employees (POSH applies)</label>
+      </div>
+      <div class="f check">
+        <input type="checkbox" id="hasForeignInvestment">
+        <label for="hasForeignInvestment">Has foreign investment (FLA return applies)</label>
+      </div>
+    </div>
+    <p class="hint"><span class="who" id="typeName"></span><span id="typeHint"></span></p>
+  </div>
+
+  <div class="slab"><h2>The statutory year, plotted to scale</h2><i class="fill"></i><span class="aside">Diamonds sit on their true dates</span></div>
+
+  <div class="axis-scroll">
+    <div class="axis-inner" id="axisInner">
+      <div class="axis-base"></div>
+      <div id="axisTicks"></div>
+      <div id="axisAnchors"></div>
+      <div id="axisMarks"></div>
+      <div class="nowline" id="nowLine" style="left:0px"><b>TODAY</b><u></u></div>
+    </div>
+  </div>
+  <p class="scroll-hint">Scroll the timeline sideways →</p>
+  <div class="axis-foot">
+    <div class="keyset">
+      <span><i class="k-now"></i>Today</span>
+      <span><i class="k-crit"></i>Overdue</span>
+      <span><i class="k-warn"></i>Within 30 days</span>
+      <span><i></i>Scheduled</span>
+      <span><i class="k-done"></i>On record</span>
+    </div>
+    <p class="cascade" id="cascadeNote"></p>
+  </div>
+
+  <div class="slab"><h2>Register of obligations</h2><i class="fill"></i></div>
+
+  <div class="tally">
+    <div class="t-crit"><b class="mono" id="statOverdue">0</b><span>Overdue</span></div>
+    <div class="t-warn"><b class="mono" id="statSoon">0</b><span>Within 30 days</span></div>
+    <div><b class="mono" id="statTotal">0</b><span>Obligations tracked</span></div>
+  </div>
+
+  <div class="reg-scroll">
+    <table class="reg">
+      <thead>
+        <tr>
+          <th class="c-sev"></th>
+          <th class="c-form">Form</th>
+          <th>Obligation, statutory basis and consequence of delay</th>
+          <th class="c-due">Due</th>
+          <th class="c-gauge"><span class="gh" id="gaugeHead"><span>−</span><b>TODAY</b><span>+</span></span></th>
+          <th class="c-status">Standing</th>
+        </tr>
+      </thead>
+      <tbody id="regBody"></tbody>
+    </table>
+  </div>
+  <p class="scroll-hint">Scroll the register sideways →</p>
+
+  <div class="slab"><h2>Standing duties, no filing date attached</h2><i class="fill"></i></div>
+
+  <div class="standing">
+    <article>
+      <div class="sec">173<sup>Section</sup></div>
+      <h3 id="boardMeetingTitle">Board meetings</h3>
+      <p id="boardMeetingText"></p>
+    </article>
+    <article>
+      <div class="sec">118<sup>Section · SS-2</sup></div>
+      <h3>General meeting minutes</h3>
+      <p>Minutes of every general meeting go into the minutes book within 30 days and are signed by the chairman. SS-2 additionally expects the draft to be circulated to directors within 15 days of the meeting for their comments.</p>
+    </article>
+    <article>
+      <div class="sec">88<sup>Section</sup></div>
+      <h3>Statutory registers</h3>
+      <p>Registers of members, directors &amp; KMP, and charges must stay current at the registered office all year — these are checked, not filed, so they're easy to let slide between audits.</p>
+    </article>
+  </div>
+
+  <div class="slab"><h2>Conditional on your numbers — check before ruling out</h2><i class="fill"></i></div>
+
+  <div class="standing">
+    <article>
+      <div class="sec">135<sup>Section</sup></div>
+      <h3>CSR spend &amp; reporting</h3>
+      <p>Kicks in only if net worth ≥ ₹500 cr, turnover ≥ ₹1000 cr, or net profit ≥ ₹5 cr in the preceding year. Once triggered, at least 2% of average profit must be spent on CSR activity and reported annually — worth checking even for a private company that has scaled.</p>
+    </article>
+    <article>
+      <div class="sec">FLA<sup>RBI · FEMA</sup></div>
+      <h3>Foreign liabilities &amp; assets return</h3>
+      <p>Any company with foreign investment (inbound or outbound) on its books must file this with the RBI by 15 July every year. It sits outside the Companies Act entirely, which is exactly why it's the most commonly missed filing among companies with foreign shareholders.</p>
+      <p class="applic-tag" id="flaTag"></p>
+    </article>
+  </div>
+
+  <footer>
+    <span class="disc-lbl">Disclaimer</span>
+    <p>Reference tool built for portfolio purposes on general Companies Act, 2013 provisions (Sections 88, 92, 96, 99, 118, 135, 137, 139, 173, 403, 405), the Sexual Harassment of Women at Workplace Act, 2013 (Sec. 21), and FEMA/RBI rules for the FLA return, plus the Companies (Registration Offices and Fees) Rules, 2014 for additional-fee figures. Deadlines are computed, not verified against a company's actual filing history — confirm against a practising Company Secretary before relying on this for a live company.</p>
+  <br><span style="display:inline-block;margin-top:8px;font-family:var(--mono);font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;">Content verified as at September 2026 · statutory figures are amended from time to time — re-check before relying on them</span>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  const MS_DAY = 86400000;
+
+  function toDate(str){ if(!str) return null; const [y,m,d]=str.split('-').map(Number); return new Date(y,m-1,d); }
+  function addDays(date, days){ const d=new Date(date); d.setDate(d.getDate()+days); return d; }
+  function daysBetween(from, to){
+    const a=new Date(from.getFullYear(),from.getMonth(),from.getDate());
+    const b=new Date(to.getFullYear(),to.getMonth(),to.getDate());
+    return Math.round((b-a)/MS_DAY);
+  }
+  function fmt(date){ return date.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }); }
+  function stripTime(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+  function nextOccurrence(monthIndex0, day, today){
+    let c = new Date(today.getFullYear(), monthIndex0, day);
+    if (c < stripTime(today)) c = new Date(today.getFullYear()+1, monthIndex0, day);
+    return c;
+  }
+  function statusFor(dr){ if (dr<0) return 'danger'; if (dr<=30) return 'warn'; return 'ok'; }
+  function pillLabel(dr, completed){
+    if (completed) return 'Completed';
+    if (dr<0) return `Overdue by ${Math.abs(dr)}d`;
+    if (dr===0) return 'Due today';
+    return `Due in ${dr}d`;
+  }
+  const companyLabels = { private:'Private Limited Company', small:'Small Company', opc:'One Person Company' };
+
+  // ---- presentation helpers -------------------------------------------------
+  const el = id => document.getElementById(id);
+  const LANES = [16,54,92,130,164], BASE_Y = 190, LABEL_W = 104;
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  let axisSig = null;
+
+  function shortDate(d){ return `${String(d.getDate()).padStart(2,'0')} ${MONTHS[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`; }
+
+  function niceDomain(v){
+    const steps = [45,60,90,120,180,240,300,365,450,540,730,1095];
+    for (const s of steps) if (v <= s) return s;
+    return Math.ceil(v/365)*365;
+  }
+
+  function render(){
+    // ===================== computation (unchanged) =====================
+    const today = new Date();
+    const type = document.getElementById('companyType').value;
+    const incDate = toDate(document.getElementById('incDate').value);
+    const fyEnd = toDate(document.getElementById('fyEnd').value) || today;
+    const firstAgm = document.getElementById('firstAgm').checked;
+    const agmHeldVal = document.getElementById('agmHeld').value;
+    const agmHeldDate = toDate(agmHeldVal);
+    const employees10 = document.getElementById('employees10').checked;
+    const hasForeignInvestment = document.getElementById('hasForeignInvestment').checked;
+
+    el('firstAgmField').hidden = (type === 'opc');
+    el('agmHeldField').hidden  = (type === 'opc');
+
+    const hints = {
+      private:'Standard AGM cycle. Annual return is filed on Form MGT-7.',
+      small:'AGM still applies, but the annual return uses the abridged Form MGT-7A.',
+      opc:'OPCs are exempt from holding an AGM (Sec. 96) — the sole member instead adopts the financial statements by written resolution, which anchors the filing deadlines below.'
+    };
+    document.getElementById('typeHint').textContent = hints[type];
+
+    let items = [];
+    const returnForm = type === 'private' ? 'MGT-7' : 'MGT-7A';
+    let anchorDate = null, anchorLabel = '', cascade = '';
+
+    if (type === 'opc'){
+      const adoptionDue = addDays(fyEnd, 180);
+      items = [
+        {
+          name:'Financial statements — adoption & filing', form:'AOC-4', basis:'Sec. 137, 3rd proviso',
+          due: adoptionDue, note:'180 days from FY end (no AGM to anchor it)',
+          consequence:'₹100/day additional fee, no upper cap'
+        },
+        {
+          name:'Filing of annual return', form:'MGT-7A', basis:'Sec. 92',
+          due: addDays(adoptionDue, 60), note:'60 days after the adoption date',
+          consequence:'₹100/day additional fee, no upper cap'
+        },
+      ];
+      anchorDate = adoptionDue; anchorLabel = 'ADOPTION';
+      cascade = 'There is no AGM to anchor the chain — the 180-day adoption date does the work, and the annual return follows 60 days behind it.';
+    } else {
+      const agmDue = firstAgm ? addDays(fyEnd, 273) : addDays(fyEnd, 183);
+      const agmRef = agmHeldDate || agmDue;
+      const agmCompleted = !!agmHeldDate;
+      items = [
+        {
+          name:'Annual General Meeting', form:'AGM', basis:'Sec. 96',
+          due: agmDue, completed: agmCompleted, completedDate: agmHeldDate,
+          note: firstAgm ? 'Within 9 months of first FY end' : 'Within 6 months of FY end',
+          consequence:'Default: fine up to ₹1,00,000 for the company and every officer in default, plus ₹5,000/day of continuing default (Sec. 99)'
+        },
+        {
+          name:'Filing of financial statements', form:'AOC-4', basis:'Sec. 137',
+          due: addDays(agmRef, 30), note:'Within 30 days of AGM',
+          consequence:'₹100/day additional fee, no upper cap'
+        },
+        {
+          name:'Filing of annual return', form:returnForm, basis:'Sec. 92',
+          due: addDays(agmRef, 60), note:'Within 60 days of AGM',
+          consequence:'₹100/day additional fee, no upper cap'
+        },
+        {
+          name:'Auditor appointment / ratification', form:'ADT-1', basis:'Sec. 139',
+          due: addDays(agmRef, 15), note:'Within 15 days of AGM',
+          consequence:'Additional fee under the standard MCA delay-based fee slab'
+        },
+      ];
+      anchorDate = agmRef; anchorLabel = agmHeldDate ? 'AGM HELD' : 'AGM DUE';
+      cascade = agmHeldDate
+        ? 'ADT-1, AOC-4 and the annual return all run from the AGM actually held — 15, 30 and 60 days behind it.'
+        : 'ADT-1, AOC-4 and the annual return run from the AGM date — 15, 30 and 60 days behind it. Enter the date the AGM was held and the whole chain moves with it.';
+    }
+
+    const recurring = [
+      { name:"Directors' KYC", form:'DIR-3 KYC Web', basis:'Rule 12A', due: nextOccurrence(5,30,today),
+        note:'By 30 June, once every third financial year — no longer annual. The cycle anchors to the financial year in which the DIN was allotted. A change in a director\'s mobile, email or address needs a fresh filing within 30 days',
+        consequence:'DIN is marked "Deactivated"; reactivation needs a flat ₹5,000 fee' },
+      { name:'Return of deposits', form:'DPT-3', basis:'Deposit Rules, r.16', due: nextOccurrence(5,30,today),
+        note:'Annually, by 30 June',
+        consequence:'Non-filing invites scrutiny under Sec. 73 for deemed deposits, besides the additional filing fee' },
+      { name:'MSME outstanding payments return', form:'MSME-1', basis:'Sec. 405', due: nextOccurrence(3,30,today),
+        note:'Half-yearly — by 30 April and 31 October, only if any MSE supplier payment is unpaid past 45 days',
+        consequence:'₹20,000 initial penalty + ₹1,000/day of continuing default, capped at ₹3,00,000' },
+      { name:'POSH annual report', form:'POSH', basis:'Sec. 21, POSH Act', due: nextOccurrence(0,31,today),
+        note:'For each calendar year, if the company has 10 or more employees — prepared by the Internal Committee and submitted to the District Officer. The Act sets no national date; 31 January is common district practice, so confirm your own District Officer\'s requirement',
+        consequence:'Up to ₹50,000 under Sec. 26; repetition can double the penalty and risk cancellation of the licence or registration',
+        applicable: employees10 },
+    ];
+
+    const withStatus = items.map(it=>{
+      const dr = it.completed ? null : daysBetween(today, it.due);
+      return {...it, daysRemaining:dr, status: it.completed ? 'done' : statusFor(dr)};
+    });
+    const overdue = withStatus.filter(i=>i.status==='danger');
+    const soon = withStatus.filter(i=>i.status==='warn');
+    const upcoming = withStatus.filter(i=>i.status==='ok');
+    const done = withStatus.filter(i=>i.status==='done');
+
+    document.getElementById('statOverdue').textContent = overdue.length;
+    document.getElementById('statSoon').textContent = soon.length;
+    document.getElementById('statTotal').textContent = withStatus.length + recurring.length;
+
+    const recurringWithStatus = recurring.map(it=>{
+      const dr = daysBetween(today, it.due);
+      const status = (it.applicable === false) ? 'na' : statusFor(dr);
+      return {...it, daysRemaining:dr, status, completed:false};
+    });
+
+    const boardRules = {
+      private:'At least four board meetings each calendar year, with no more than 120 days between two consecutive meetings (Sec. 173(1)).',
+      small:'At least one meeting in each half of the calendar year, with a minimum gap of 90 days between the two (Sec. 173(5)).',
+      opc:'At least one meeting in each half of the calendar year (min. 90-day gap) — or none at all if the OPC has only one director, under the proviso to Sec. 173(5).'
+    };
+    document.getElementById('boardMeetingText').textContent = boardRules[type];
+
+    const flaTag = el('flaTag');
+    if (hasForeignInvestment){
+      flaTag.textContent = `Applies to you — next due ${fmt(nextOccurrence(6,15,today))}`;
+      flaTag.className = 'applic-tag yes';
+    } else {
+      flaTag.textContent = 'Not applicable — no foreign investment recorded above';
+      flaTag.className = 'applic-tag no';
+    }
+    // ================== end computation (unchanged) ==================
+
+    // ---- header / profile -------------------------------------------------
+    el('asOf').textContent = fmt(today);
+    el('asOfDay').textContent = today.toLocaleDateString('en-IN', { weekday:'long' });
+    el('typeName').textContent = companyLabels[type];
+    el('profileStrip').textContent =
+      `Incorporated ${incDate ? fmt(incDate) : '—'}  ·  FY ending ${fmt(fyEnd)}`;
+    el('cascadeNote').textContent = cascade;
+
+    // ---- register ---------------------------------------------------------
+    const allRows = [...withStatus, ...recurringWithStatus];
+    const maxAbs = Math.max(30, ...allRows.map(r => r.completed ? 0 : Math.abs(r.daysRemaining)));
+    const dom = niceDomain(maxAbs);
+    el('gaugeHead').innerHTML = `<span>−${dom}d</span><b>TODAY</b><span>+${dom}d</span>`;
+
+    function gauge(it){
+      if (it.completed) return `<div class="gauge"><span class="g-track"></span><span class="g-now"></span><span class="g-none">on record</span></div>`;
+      if (it.status === 'na') return `<div class="gauge"><span class="g-track"></span><span class="g-now"></span><span class="g-none">not applicable</span></div>`;
+      const p = Math.max(-1, Math.min(1, it.daysRemaining/dom));
+      const x = 50 + p*47;
+      const a = Math.min(50, x), w = Math.abs(x-50);
+      const s = it.status;
+      return `<div class="gauge"><span class="g-track"></span><span class="g-now"></span>`
+           + `<span class="g-bar s-${s}" style="left:${a}%;width:${w}%"></span>`
+           + `<span class="g-dot s-${s}" style="left:${x}%"></span></div>`;
+    }
+
+    function row(it){
+      const s = it.status;
+      const dateBits = it.completed
+        ? `<small>Held</small>${esc(fmt(it.completedDate))}`
+        : `<small>By</small>${esc(fmt(it.due))}`;
+      const label = (s === 'na') ? 'Not applicable' : pillLabel(it.daysRemaining, it.completed);
+      return `<tr>
+        <td class="c-sev s-${s}"></td>
+        <td class="c-form"><span class="form-code">${esc(it.form)}</span></td>
+        <td>
+          <div class="obl">${esc(it.name)}</div>
+          <div class="basis"><b>${esc(it.basis)}</b> — ${esc(it.note)}</div>
+          <div class="pen"><i>Penalty</i>${esc(it.consequence)}</div>
+        </td>
+        <td class="c-due"><div class="due">${dateBits}</div></td>
+        <td class="c-gauge">${gauge(it)}</td>
+        <td class="c-status"><div class="stat s-${s}"><i></i><span>${esc(label)}</span></div></td>
+      </tr>`;
+    }
+    function band(title, n, cls){
+      return `<tr class="band ${cls}"><td colspan="6"><span class="bt">${title}</span><span class="bc">${n}</span></td></tr>`;
+    }
+
+    let body = '';
+    if (overdue.length)  body += band('Overdue', overdue.length, 'b-crit')  + overdue.map(row).join('');
+    if (soon.length)     body += band('Due within 30 days', soon.length, 'b-warn') + soon.map(row).join('');
+    if (upcoming.length) body += band('Scheduled', upcoming.length, '')     + upcoming.map(row).join('');
+    if (done.length)     body += band('On record', done.length, 'b-done')   + done.map(row).join('');
+    body += band('Recurring — independent of the AGM', recurringWithStatus.length, '')
+          + recurringWithStatus.map(row).join('');
+    el('regBody').innerHTML = body;
+
+    // ---- axis instrument --------------------------------------------------
+    const marks = allRows.map(it => ({
+      key: it.form,
+      form: it.form,
+      date: it.completed ? it.completedDate : it.due,
+      status: it.status
+    })).sort((a,b)=> a.date - b.date);
+
+    const anchors = [{ date: fyEnd, label:'FY END' }];
+    if (anchorDate) anchors.push({ date: anchorDate, label: anchorLabel });
+
+    const inner = el('axisInner');
+    const W = Math.max(inner.clientWidth || 0, 720);
+
+    const stamps = marks.map(m=>m.date.getTime())
+      .concat(anchors.map(a=>a.date.getTime()), [stripTime(today).getTime()]);
+    let lo = Math.min(...stamps), hi = Math.max(...stamps);
+    const span = Math.max(hi - lo, MS_DAY*45);
+    lo -= span*0.07; hi += span*0.10;
+    const X = t => ((t - lo)/(hi - lo)) * W;
+
+    // month ticks
+    let tk = '';
+    let cur = new Date(lo); cur = new Date(cur.getFullYear(), cur.getMonth(), 1);
+    let guard = 0;
+    while (cur.getTime() <= hi && guard++ < 200){
+      const t = cur.getTime();
+      if (t >= lo){
+        const x = X(t);
+        const isYr = cur.getMonth() === 0;
+        const label = isYr ? `${MONTHS[0]} ${cur.getFullYear()}` : MONTHS[cur.getMonth()];
+        tk += `<div class="tick${isYr?' yr':''}" style="left:${x.toFixed(1)}px"><i></i><span>${label.toUpperCase()}</span></div>`;
+      }
+      cur = new Date(cur.getFullYear(), cur.getMonth()+1, 1);
+    }
+    el('axisTicks').innerHTML = tk;
+
+    // anchors
+    el('axisAnchors').innerHTML = anchors.map(a=>{
+      const x = X(a.date.getTime());
+      const flip = x > W - 90;
+      return `<div class="anchor${flip?' flip':''}" style="left:${x.toFixed(1)}px"><i></i><span>${a.label}</span></div>`;
+    }).join('');
+
+    // Lane packing. A label may not overlap another label in its own lane, and no
+    // stem may pass through a label — a mark in lane L drops a stem through every
+    // lane beneath it, so both directions have to be checked.
+    const nowX = X(stripTime(today).getTime());
+    const occ   = LANES.map(()=> []);            // label intervals per lane
+    const cross = LANES.map(()=> [nowX]);        // stem x-positions crossing that lane
+
+    marks.forEach(m=>{
+      const x = X(m.date.getTime());
+      const flip = (x + LABEL_W) > (W - 6);
+      const l = flip ? x - LABEL_W : x;
+      const r = l + LABEL_W;
+
+      const fits = lane => {
+        for (const [a,b] of occ[lane]) if (l < b + 8 && r + 8 > a) return false;
+        for (const cx of cross[lane]) if (cx > l - 4 && cx < r + 4) return false;
+        for (let k = lane + 1; k < LANES.length; k++){
+          for (const [a,b] of occ[k]) if (x > a - 4 && x < b + 4) return false;
+        }
+        return true;
+      };
+
+      let lane = 0;
+      while (lane < LANES.length && !fits(lane)) lane++;
+      if (lane === LANES.length){
+        lane = occ.reduce((best,arr,i)=> arr.length < occ[best].length ? i : best, 0);
+      }
+      occ[lane].push([l, r]);
+      for (let k = lane + 1; k < LANES.length; k++) cross[k].push(x);
+
+      m._x = x; m._lane = lane; m._flip = flip;
+    });
+
+    const sig = marks.map(m=>m.key).join('|');
+    const host = el('axisMarks');
+    if (sig !== axisSig){
+      axisSig = sig;
+      host.innerHTML = marks.map((m,i)=>{
+        const y = LANES[m._lane];
+        return `<div class="mark enter s-${m.status}${m._flip?' flip':''}" data-k="${esc(m.key)}"`
+             + ` style="left:${m._x.toFixed(1)}px;top:${y}px;--h:${BASE_Y-y}px;animation-delay:${i*45}ms">`
+             + `<span class="stem"></span><span class="node"></span>`
+             + `<span class="lbl"><b>${esc(m.form)}</b><em>${esc(shortDate(m.date))}</em></span></div>`;
+      }).join('');
+    } else {
+      marks.forEach(m=>{
+        const node = host.querySelector(`[data-k="${CSS.escape(m.key)}"]`);
+        if (!node) return;
+        const y = LANES[m._lane];
+        node.className = `mark s-${m.status}${m._flip?' flip':''}`;
+        node.style.left = m._x.toFixed(1)+'px';
+        node.style.top = y+'px';
+        node.style.setProperty('--h', (BASE_Y-y)+'px');
+        node.querySelector('.lbl').innerHTML = `<b>${esc(m.form)}</b><em>${esc(shortDate(m.date))}</em>`;
+      });
+    }
+
+    const nx = X(stripTime(today).getTime());
+    const nl = el('nowLine');
+    nl.style.left = nx.toFixed(1)+'px';
+    nl.classList.toggle('flip', nx > W - 70);
+    nl.querySelector('b').style.left = nx > W - 70 ? 'auto' : '6px';
+    nl.querySelector('b').style.right = nx > W - 70 ? '6px' : 'auto';
+  }
+
+  ['companyType','incDate','fyEnd','firstAgm','agmHeld','employees10','hasForeignInvestment'].forEach(id=>{
+    document.getElementById(id).addEventListener('input', render);
+    document.getElementById(id).addEventListener('change', render);
+  });
+
+  let rt;
+  window.addEventListener('resize', ()=>{ clearTimeout(rt); rt = setTimeout(render, 140); });
+
+  render();
+})();
+</script>
+
+<script>
+/* Native date inputs render in the browser's locale, so an Indian statutory tool
+   can show mm/dd/yyyy. Echo the parsed date back in the form the tool uses. */
+(function(){
+  function fmtIN(v){
+    if(!v) return '';
+    var d = new Date(v + 'T00:00:00');
+    if(isNaN(d)) return '';
+    return d.toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric' });
+  }
+  function attach(inp){
+    if(inp.dataset.dateEcho) return;
+    inp.dataset.dateEcho = '1';
+    var e = document.createElement('span');
+    e.className = 'date-echo';
+    inp.insertAdjacentElement('afterend', e);
+    function upd(){ e.textContent = fmtIN(inp.value); }
+    inp.addEventListener('input', upd);
+    inp.addEventListener('change', upd);
+    upd();
+  }
+  function scan(){ document.querySelectorAll('input[type=date]').forEach(attach); }
+  scan();
+  if(window.MutationObserver){
+    new MutationObserver(scan).observe(document.body, { childList:true, subtree:true });
+  }
+})();
+</script>
+</html>

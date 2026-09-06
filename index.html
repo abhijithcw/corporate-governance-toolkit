@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en-IN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Seven browser-based tools for Indian corporate governance and compliance — statutory deadlines, event-triggered ROC filings, board resolutions, Secretarial Standards, contract risk and SEBI filings.">
+<title>Corporate Governance Toolkit</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&family=Spline+Sans+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    color-scheme: light;
+    --ground:#DCE3DD; --panel:#EEF2EC; --panel-2:#E4EAE3;
+    --ink:#0F1714; --ink-2:#48544E; --ink-3:#78857E;
+    --rule:rgba(15,23,20,0.14); --rule-2:rgba(15,23,20,0.30);
+    --accent:#0A5C53; --accent-2:#0E7568; --accent-wash:rgba(10,92,83,0.10);
+    --crit:#B42E22; --now:#C8382A; --warn:#8F6206; --warn-wash:rgba(143,98,6,0.14);
+    --sans:'Archivo', ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
+    --mono:'Spline Sans Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    --r:2px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
+      --ground:#0C1310; --panel:#131C18; --panel-2:#18221E;
+      --ink:#DCE5DF; --ink-2:#94A39C; --ink-3:#6C7B74;
+      --rule:rgba(220,229,223,0.14); --rule-2:rgba(220,229,223,0.30);
+      --accent:#54C3B2; --accent-2:#74D6C6; --accent-wash:rgba(84,195,178,0.14);
+      --crit:#F0796A; --now:#F0796A; --warn:#DCA340; --warn-wash:rgba(220,163,64,0.16);
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --ground:#0C1310; --panel:#131C18; --panel-2:#18221E;
+    --ink:#DCE5DF; --ink-2:#94A39C; --ink-3:#6C7B74;
+    --rule:rgba(220,229,223,0.14); --rule-2:rgba(220,229,223,0.30);
+    --accent:#54C3B2; --accent-2:#74D6C6; --accent-wash:rgba(84,195,178,0.14);
+    --crit:#F0796A; --now:#F0796A; --warn:#DCA340; --warn-wash:rgba(220,163,64,0.16);
+  }
+  *{ box-sizing:border-box; }
+  body{ background:var(--ground); color:var(--ink); font-family:var(--sans); font-size:16px; line-height:1.55; margin:0; -webkit-font-smoothing:antialiased; }
+  .sheet{ max-width:1180px; margin:0 auto; padding:56px 28px 70px; }
+  a{ color:inherit; }
+  a:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .mono{ font-family:var(--mono); }
+
+  .kicker{ font-family:var(--mono); font-size:11.5px; letter-spacing:0.18em; text-transform:uppercase; color:var(--accent); margin:0 0 16px; }
+  h1{ font-family:var(--sans); font-weight:800; font-stretch:120%; font-size:clamp(38px, 6vw, 66px); line-height:0.92; letter-spacing:-0.035em; margin:0; text-wrap:balance; max-width:16ch; }
+  .lede{ margin:22px 0 0; max-width:64ch; color:var(--ink-2); font-size:17.5px; }
+  .byline{ margin-top:26px; font-family:var(--mono); font-size:12.5px; color:var(--ink-3); letter-spacing:0.02em; }
+  .byline b{ color:var(--ink); font-weight:600; }
+
+  .slab{ display:flex; align-items:center; gap:14px; margin:44px 0 14px; }
+  .slab h2{ font-family:var(--mono); font-size:12px; font-weight:500; letter-spacing:0.18em; text-transform:uppercase; color:var(--ink-2); margin:0; white-space:nowrap; }
+  .slab .fill{ flex:1 1 auto; height:1px; background:var(--rule-2); }
+
+  .cards{ display:grid; grid-template-columns:repeat(auto-fit, minmax(340px,1fr)); gap:22px; }
+  .card{ display:block; text-decoration:none; background:var(--panel); border:1px solid var(--rule-2); overflow:hidden; transition:border-color .15s ease; }
+  .card:hover{ border-color:var(--accent); }
+  .thumb-wrap{ aspect-ratio:1200/713; overflow:hidden; border-bottom:1px solid var(--rule-2); background:var(--panel-2); }
+  .thumb-wrap img{ width:100%; height:100%; object-fit:cover; object-position:top; display:block; }
+  .card-body{ padding:18px 20px 22px; }
+  .card-num{ font-family:var(--mono); font-size:11px; letter-spacing:0.14em; color:var(--accent); text-transform:uppercase; }
+  .card h3{ font-size:19px; margin:8px 0 8px; letter-spacing:-0.01em; }
+  .card p{ font-size:13.5px; color:var(--ink-2); margin:0; line-height:1.6; }
+  .card .open{ display:inline-flex; align-items:center; gap:6px; margin-top:14px; font-family:var(--mono); font-size:11.5px; letter-spacing:0.08em; text-transform:uppercase; color:var(--accent); }
+  .card .open::after{ content:'→'; transition:transform .15s ease; }
+  .card:hover .open::after{ transform:translateX(3px); }
+
+  .about{ display:grid; grid-template-columns:1fr; gap:16px; background:var(--panel); border:1px solid var(--rule-2); padding:28px 30px; margin-top:8px; }
+  .about p{ margin:0; color:var(--ink-2); font-size:15px; line-height:1.7; max-width:74ch; }
+  .about p + p{ margin-top:12px; }
+  .stack{ margin-top:18px; display:flex; gap:10px; flex-wrap:wrap; }
+  .stack span{ font-family:var(--mono); font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-2); border:1px solid var(--rule-2); padding:5px 10px; border-radius:var(--r); }
+
+  footer{ margin-top:56px; padding-top:20px; border-top:1px solid var(--rule); font-size:12.5px; color:var(--ink-3); line-height:1.7; }
+
+  /* identity strip, shared with the six tool pages */
+  .toolkit-nav{ display:flex; align-items:center; gap:18px; flex-wrap:wrap; padding:16px 28px; max-width:1180px; margin:0 auto;
+    font-family:var(--mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase;
+    border-bottom:1px solid var(--rule); color:var(--ink-3); }
+  .toolkit-nav .home{ color:var(--ink); font-weight:600; letter-spacing:0.14em; margin-right:auto; text-decoration:none; }
+  .toolkit-nav .here{ color:var(--accent); }
+
+  /* six tools sit as a clean 3 + 3; the contact card closes the page as a full-width band */
+  .card-contact{ background:var(--panel-2); border-color:var(--ink); grid-column:1 / -1; }
+  .card-contact .card-body{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,340px);
+    gap:20px 44px; align-items:center; padding:24px 24px; }
+  .card-contact h3{ margin:6px 0 8px; }
+  .card-contact .c-text p{ margin:0; }
+  .card-contact .links{ border-top:1px solid var(--rule); }
+  .card-contact .links a{ display:flex; align-items:center; justify-content:space-between;
+    flex-wrap:wrap; gap:4px 14px; padding:11px 0; border-bottom:1px solid var(--rule); text-decoration:none;
+    font-family:var(--mono); font-size:11.5px; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink); }
+  .card-contact .links a:last-child{ border-bottom:0; }
+  /* the label is a label; the address is an address — don't shout it */
+  .card-contact .links a span{ color:var(--accent); text-transform:none; letter-spacing:0.01em; }
+  .card-contact .links a:hover span{ text-decoration:underline; }
+  .todo{ background:var(--warn-wash); color:var(--warn); padding:2px 7px; border-radius:var(--r); }
+
+  /* method note is a footnote to the About section, not a co-headline */
+  .method{ margin-top:18px; padding-top:14px; border-top:1px solid var(--rule); }
+  .method .lbl{ font-family:var(--mono); font-size:10.5px; letter-spacing:0.14em;
+    text-transform:uppercase; color:var(--ink-3); margin:0 0 6px; }
+  .method p{ font-size:13.5px; color:var(--ink-3); }
+
+  /* ---------- shared responsive shell ---------- */
+  @media (max-width:760px){
+    .sheet{ padding:32px 18px 56px; }
+    .slab{ flex-wrap:wrap; gap:8px 14px; }
+    .slab h2{ white-space:normal; letter-spacing:0.14em; }
+    .slab .fill{ display:none; }
+    .toolkit-nav{ gap:10px 14px; padding:12px 18px; font-size:10.5px; }
+    .cards{ grid-template-columns:1fr; gap:14px; }
+    .card-contact .card-body{ grid-template-columns:1fr; gap:14px; padding:20px 18px; }
+    .about{ padding:22px 18px; }
+  }
+  @media (max-width:640px){
+    /* a whole-page desktop capture at 334px is unreadable noise — the card
+       reads better as a numbered index entry */
+    .thumb-wrap{ display:none; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation:none !important; transition:none !important; }
+  }
+  .card-start{ display:grid; grid-template-columns:minmax(0,440px) minmax(0,1fr); align-items:stretch; margin-bottom:8px; }
+  .card-start .thumb-wrap{ border-bottom:0; border-right:1px solid var(--rule-2); height:100%; }
+  .card-start .card-body{ padding:24px 26px; align-self:center; }
+  .card-start h3{ font-size:22px; }
+  .card-start p{ font-size:14px; }
+  @media (max-width:760px){ .card-start{ grid-template-columns:1fr; } .card-start .thumb-wrap{ border-right:0; } }
+</style>
+
+<nav class="toolkit-nav">
+  <a class="home" href="./">CORPORATE GOVERNANCE TOOLKIT</a>
+  <span class="here">Overview</span>
+</nav>
+
+<div class="sheet">
+  <p class="kicker">Corporate governance &amp; compliance — a working toolkit</p>
+  <h1>Software for the job I'm training to do.</h1>
+  <p class="lede">Seven small, real tools built around the Companies Act, 2013, SEBI's Listing Regulations, the Secretarial Standards and FEMA — the statutory ground a Company Secretary actually works on. Each one runs entirely in your browser: no signup, no server, no data leaves the page.</p>
+  <p class="byline">Built by <b>Abhijith</b> — BBA LLB (Hons.), pursuing CS Executive · Palakkad, Kerala</p>
+
+  <div class="slab"><h2>Start here</h2><i class="fill"></i></div>
+  <a class="card card-start" href="company-classification/">
+    <div class="thumb-wrap"><img src="thumbnails/company-classification.jpg" alt="Company Classification screenshot" width="1200" height="713"></div>
+    <div class="card-body">
+      <div class="card-num">00 · Classification</div>
+      <h3>What are you, and what follows from it?</h3>
+      <p>Almost every obligation in the Companies Act keys off a threshold — paid-up capital, turnover, borrowings, public or private. Enter the numbers once and see what the company actually is, and which fourteen requirements switch on or off because of it. The other tools all assume you already know this.</p>
+      <span class="open">Open tool</span>
+    </div>
+  </a>
+
+  <div class="slab"><h2>The toolkit</h2><i class="fill"></i></div>
+  <div class="cards">
+
+    <a class="card" href="compliance-radar/">
+      <div class="thumb-wrap"><img src="thumbnails/compliance-radar.jpg" alt="Compliance Radar screenshot" width="1200" height="713"></div>
+      <div class="card-body">
+        <div class="card-num">01 · Deadline tracker</div>
+        <h3>Compliance Radar</h3>
+        <p>Every statutory deadline a private company carries — AGM, ROC filings, POSH, FLA — computed live from two anchor dates: incorporation and financial year end.</p>
+        <span class="open">Open tool</span>
+      </div>
+    </a>
+
+    <a class="card" href="event-compliance/">
+      <div class="thumb-wrap"><img src="thumbnails/event-compliance.jpg" alt="Event Compliance Navigator screenshot" width="1200" height="713"></div>
+      <div class="card-body">
+        <div class="card-num">02 · Event navigator</div>
+        <h3>Event Compliance Navigator</h3>
+        <p>Something happened — a director resigned, a charge was created, shares were allotted. 49 events mapped to the form, the deadline computed from your date, the provision, and what the delay costs.</p>
+        <span class="open">Open tool</span>
+      </div>
+    </a>
+
+    <a class="card" href="board-resolution-generator/">
+      <div class="thumb-wrap"><img src="thumbnails/board-resolution-generator.jpg" alt="Board Resolution & Minutes Generator screenshot" width="1200" height="713"></div>
+      <div class="card-body">
+        <div class="card-num">03 · Document generator</div>
+        <h3>Board Resolution &amp; Minutes Generator</h3>
+        <p>Twelve common board resolutions — director appointments, RPTs, borrowing powers, bank accounts — drafted with a live Section 174 quorum and notice-period check.</p>
+        <span class="open">Open tool</span>
+      </div>
+    </a>
+
+    <a class="card" href="ss-checker/">
+      <div class="thumb-wrap"><img src="thumbnails/ss-checker.jpg" alt="SS-1 / SS-2 Checker screenshot" width="1200" height="713"></div>
+      <div class="card-body">
+        <div class="card-num">04 · Validity checker</div>
+        <h3>SS-1 / SS-2 Secretarial Standards Checker</h3>
+        <p>Was that meeting actually valid? Checks a board meeting against SS-1, or a general meeting against SS-2 — notice, quorum, and the minutes deadlines that follow.</p>
+        <span class="open">Open tool</span>
+      </div>
+    </a>
+
+    <a class="card" href="contract-risk-flagger/">
+      <div class="thumb-wrap"><img src="thumbnails/contract-risk-flagger.jpg" alt="Contract Clause Risk-Flagger screenshot" width="1200" height="713"></div>
+      <div class="card-body">
+        <div class="card-num">05 · Risk scanner</div>
+        <h3>Contract Clause Risk-Flagger</h3>
+        <p>Paste a contract, get back 24 clause patterns that commonly disadvantage the reviewing party under Indian contract law — each with a plain-English risk note and a redline to propose.</p>
+        <span class="open">Open tool</span>
+      </div>
+    </a>
+
+    <a class="card" href="sebi-compliance-checker/">
+      <div class="thumb-wrap"><img src="thumbnails/sebi-compliance-checker.jpg" alt="SEBI Compliance Checker screenshot" width="1200" height="713"></div>
+      <div class="card-body">
+        <div class="card-num">06 · Deadline tracker</div>
+        <h3>SEBI Compliance Checker</h3>
+        <p>The recurring SEBI (LODR) filings every listed company owes the exchanges, plus the size-linked governance requirements — BRSR, Risk Management Committee — that kick in as a company grows.</p>
+        <span class="open">Open tool</span>
+      </div>
+    </a>
+
+    <div class="card card-contact">
+      <div class="card-body">
+        <div class="c-text">
+          <div class="card-num">Get in touch</div>
+          <h3>Abhijith</h3>
+          <p>BBA LLB (Hons.) · CS Executive (pursuing) · Palakkad, Kerala. Open to CS traineeship and corporate compliance roles.</p>
+        </div>
+        <div class="links">
+          <a href="mailto:abhijithramadas02@gmail.com">Email<span>abhijithramadas02@gmail.com</span></a>
+          <a href="https://www.linkedin.com/in/abhijith-c-46ab66143/" target="_blank" rel="noopener">LinkedIn<span>linkedin.com/in/abhijith-c</span></a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="slab"><h2>About this project</h2><i class="fill"></i></div>
+  <div class="about">
+    <p>I'm a BBA LLB (Hons.) graduate currently pursuing the CS Executive qualification, aiming for corporate governance and compliance roles. I built this toolkit to work through the statutory material properly — not by reading it, but by encoding the actual logic (quorum formulas, filing deadlines, notice periods, clause-level contract risk) into something that runs and can be checked.</p>
+    <div class="method">
+      <p class="lbl">Method</p>
+      <p>Each tool was implemented with the assistance of an AI coding tool (Claude), under my direction — I set the scope, verified the legal content against the Bare Acts, SEBI circulars and the Secretarial Standards, and made the design and content decisions throughout. Where a rule has a genuine grey area, the tool says so rather than guessing.</p>
+    </div>
+    <div class="stack">
+      <span>Companies Act, 2013</span>
+      <span>SEBI (LODR) Regulations</span>
+      <span>Secretarial Standards SS-1 / SS-2</span>
+      <span>Indian Contract Act, 1872</span>
+      <span>No backend · runs in-browser</span>
+    </div>
+  </div>
+
+  <footer>
+    Reference tools built for portfolio purposes. None of them constitute legal advice, and none replace review by a practising Company Secretary or advocate before use on an actual company. See each tool's own footer for the specific provisions it draws on.
+  <br><span style="display:inline-block;margin-top:8px;font-family:var(--mono);font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;">Content verified as at September 2026 · statutory figures are amended from time to time — re-check before relying on them</span>
+  </footer>
+</div>
+</html>
