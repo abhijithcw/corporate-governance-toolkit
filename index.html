@@ -129,7 +129,14 @@
   .card-start .card-body{ padding:24px 26px; align-self:center; }
   .card-start h3{ font-size:22px; }
   .card-start p{ font-size:14px; }
-  @media (max-width:760px){ .card-start{ grid-template-columns:1fr; } .card-start .thumb-wrap{ border-right:0; } }
+  /* Below ~1080px the text column gets narrow, the paragraph runs long, and the
+     row grows taller than the 1200/713 preview — which then crops its own sides
+     away. Stack instead: full-width preview at its true ratio, text beneath. */
+  @media (max-width:1080px){
+    .card-start{ grid-template-columns:1fr; }
+    .card-start .thumb-wrap{ border-right:0; border-bottom:1px solid var(--rule-2);
+      aspect-ratio:1200/713; height:auto; min-height:0; }
+  }
 </style>
 
 <nav class="toolkit-nav">
